@@ -10,7 +10,7 @@ impl<T> Client<T> for WebsocketClient {
         todo!()
     }
 
-    fn send(&self, message: T) {
+    fn send(&self, _message: T) {
         todo!()
     }
 }

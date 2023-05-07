@@ -27,9 +27,9 @@ where
 
     fn receive(&mut self) -> String {
         let message = self.read_message().unwrap();
-        let text = message.into_text().unwrap();
+        
 
-        return text;
+        message.into_text().unwrap()
     }
 }
 

@@ -1,6 +1,6 @@
 use crate::{
     client::Client,
-    conversation::{self, Conversation},
+    conversation::{Conversation},
     server::{MessageChannel, SessionHandler},
 };
 
@@ -26,9 +26,9 @@ impl<T> SessionHandler for Session<T>
 where
     T: FnOnce() -> Box<dyn Client<String>>,
 {
-    fn handle_session(self, channel: impl MessageChannel) {
-        let model_client = (self.make_client)();
+    fn handle_session(self, _channel: impl MessageChannel) {
+        let _model_client = (self.make_client)();
 
-        let conversation = Conversation::new();
+        let _conversation = Conversation::new();
     }
 }
