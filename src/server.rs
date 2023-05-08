@@ -22,12 +22,11 @@ where
     Stream: std::io::Read + std::io::Write,
 {
     fn send(&mut self, message: String) {
-        self.write_message(Message::Text(message));
+        self.write_message(Message::Text(message)).unwrap();
     }
 
     fn receive(&mut self) -> String {
         let message = self.read_message().unwrap();
-        
 
         message.into_text().unwrap()
     }

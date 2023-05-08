@@ -1,20 +1,19 @@
+#![deny(clippy::pedantic)]
+#![allow(clippy::module_name_repetitions)]
 
-
-use client::{Client, WebsocketClient};
+use model_client::{Client, WebsocketClient};
 
 use crate::{
     server::{Server, WebsocketServer},
     session::Session,
 };
 
-mod client;
 mod conversation;
+mod model_client;
 mod server;
 mod session;
 
 fn main() {
-    println!("Hello, world!");
-
     // Listens for connections from browsers
     let server = make_server();
 
@@ -27,6 +26,6 @@ fn make_server() -> impl Server {
     WebsocketServer {}
 }
 
-fn make_client() -> impl Client<String> + Sync + Send {
-    WebsocketClient {}
+fn make_client() -> impl Client + Sync + Send {
+    WebsocketClient::connect("ws://archdesktop.local:5005/api/v1/stream")
 }
