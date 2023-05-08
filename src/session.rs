@@ -1,10 +1,10 @@
 use crate::{
     conversation::Conversation,
-    model_client::{Client, ClientRequest, PredictParameters, ServerResponse},
+    model_client::{Client, ClientRequest},
     server::{MessageChannel, SessionHandler},
 };
 use serde::{Deserialize, Serialize};
-use serde_json;
+
 
 /// A `Session` handles the `Conversation` from beginning to end.
 #[derive(Clone)]

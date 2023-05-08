@@ -53,7 +53,7 @@ pub enum ClientRequest {
 
 impl ClientRequest {
     fn start_predicting(prompt: String) -> Self {
-        ClientRequest::StartPredicting { prompt: prompt }
+        ClientRequest::StartPredicting { prompt }
     }
 }
 
