@@ -1,5 +1,5 @@
 use crate::{
-    agent::{self, Agent},
+    agent::{Agent},
     conversation::Conversation,
     model_client::{Client, ClientRequest},
     server::{MessageChannel, SessionHandler},

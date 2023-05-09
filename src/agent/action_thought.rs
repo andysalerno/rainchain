@@ -1,4 +1,4 @@
-use log::{debug, trace};
+use log::{debug};
 
 use crate::{conversation::Conversation, server::MessageChannel};
 
@@ -15,8 +15,8 @@ impl ActionThought {
 impl Agent for ActionThought {
     fn handle_assistant_message(
         &self,
-        conversation: &mut Conversation,
-        channel: &mut dyn MessageChannel,
+        _conversation: &mut Conversation,
+        _channel: &mut dyn MessageChannel,
     ) {
         debug!("ActionThought agent saw message from assistant.");
     }
