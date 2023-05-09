@@ -47,12 +47,80 @@ impl Client for WebsocketClient {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ClientRequest {
-    StartPredicting { prompt: String },
+    StartPredicting {
+        prompt: String,
+        max_new_tokens: usize,
+        do_sample: bool,
+        temperature: f32,
+        top_p: f32,
+        typical_p: f32,
+        repetition_penalty: f32,
+        encoder_repetition_penalty: f32,
+        top_k: usize,
+        min_length: usize,
+        no_repeat_ngram_size: usize,
+        num_beams: usize,
+        penalty_alpha: f32,
+        length_penalty: f32,
+        early_stopping: bool,
+        seed: i32,
+        add_bos_token: bool,
+        truncation_length: usize,
+        ban_eos_token: bool,
+        skip_special_tokens: bool,
+        stopping_strings: Vec<String>,
+    },
 }
 
+// generate_params = {
+//     'max_new_tokens': int(body.get('max_new_tokens', body.get('max_length', 200))),
+//     'do_sample': bool(body.get('do_sample', True)),
+//     'temperature': float(body.get('temperature', 0.5)),
+//     'top_p': float(body.get('top_p', 1)),
+//     'typical_p': float(body.get('typical_p', body.get('typical', 1))),
+//     'repetition_penalty': float(body.get('repetition_penalty', body.get('rep_pen', 1.1))),
+//     'encoder_repetition_penalty': float(body.get('encoder_repetition_penalty', 1.0)),
+//     'top_k': int(body.get('top_k', 0)),
+//     'min_length': int(body.get('min_length', 0)),
+//     'no_repeat_ngram_size': int(body.get('no_repeat_ngram_size', 0)),
+//     'num_beams': int(body.get('num_beams', 1)),
+//     'penalty_alpha': float(body.get('penalty_alpha', 0)),
+//     'length_penalty': float(body.get('length_penalty', 1)),
+//     'early_stopping': bool(body.get('early_stopping', False)),
+//     'seed': int(body.get('seed', -1)),
+//     'add_bos_token': bool(body.get('add_bos_token', True)),
+//     'truncation_length': int(body.get('truncation_length', 2048)),
+//     'ban_eos_token': bool(body.get('ban_eos_token', False)),
+//     'skip_special_tokens': bool(body.get('skip_special_tokens', True)),
+//     'custom_stopping_strings': '',  # leave this blank
+//     'stopping_strings': body.get('stopping_strings', []),
+// }
+
 impl ClientRequest {
-    fn start_predicting(prompt: String) -> Self {
-        ClientRequest::StartPredicting { prompt }
+    pub fn start_predicting(prompt: String) -> Self {
+        ClientRequest::StartPredicting {
+            prompt,
+            max_new_tokens: 200,
+            do_sample: true,
+            temperature: 0.5,
+            top_p: 1.,
+            typical_p: 1.,
+            repetition_penalty: 1.1,
+            encoder_repetition_penalty: 1.1,
+            top_k: 0,
+            min_length: 0,
+            no_repeat_ngram_size: 0,
+            num_beams: 1,
+            penalty_alpha: 0.,
+            length_penalty: 1.,
+            early_stopping: false,
+            seed: -1,
+            add_bos_token: true,
+            truncation_length: 2048,
+            ban_eos_token: false,
+            skip_special_tokens: true,
+            stopping_strings: Vec::new(),
+        }
     }
 }
 

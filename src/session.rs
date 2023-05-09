@@ -1,5 +1,5 @@
 use crate::{
-    agent::{Agent},
+    agent::Agent,
     conversation::Conversation,
     model_client::{Client, ClientRequest},
     server::{MessageChannel, SessionHandler},
@@ -80,9 +80,7 @@ where
 
             // 2. Tell the model to start predicting
             {
-                let request = ClientRequest::StartPredicting {
-                    prompt: conversation.build_full_history(),
-                };
+                let request = ClientRequest::start_predicting(conversation.build_full_history());
 
                 model_client.send(request);
             }
