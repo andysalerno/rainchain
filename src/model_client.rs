@@ -1,4 +1,4 @@
-use log::debug;
+use log::{debug, trace};
 use serde::{Deserialize, Serialize};
 use std::net::TcpStream;
 use std::thread;
@@ -32,7 +32,7 @@ impl Client for WebsocketClient {
             thread::yield_now();
         };
 
-        // debug!("received from model: {json}");
+        trace!("received from model: {json}");
         serde_json::from_str(&json).unwrap()
     }
 
