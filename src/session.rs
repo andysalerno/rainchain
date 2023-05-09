@@ -1,26 +1,40 @@
 use crate::{
+    agent::{self, Agent},
     conversation::Conversation,
     model_client::{Client, ClientRequest},
     server::{MessageChannel, SessionHandler},
 };
+use log::debug;
 use serde::{Deserialize, Serialize};
+use std::fs;
 
+fn load_prompt_text(prompt_name: &str) -> String {
+    let path = format!("src/prompts/{prompt_name}");
+    debug!("Reading prompt file: {path}");
+    fs::read_to_string(path).expect("Failed to read prompt file")
+}
 
 /// A `Session` handles the `Conversation` from beginning to end.
 #[derive(Clone)]
-pub struct Session<T>
+pub struct Session<TClient, TAgent>
 where
-    T: FnOnce() -> Box<dyn Client>,
+    TClient: FnOnce() -> Box<dyn Client>,
+    TAgent: FnOnce() -> Box<dyn Agent>,
 {
-    make_client: T,
+    make_client: TClient,
+    make_agent: TAgent,
 }
 
-impl<T> Session<T>
+impl<TClient, TAgent> Session<TClient, TAgent>
 where
-    T: FnOnce() -> Box<dyn Client>,
+    TClient: FnOnce() -> Box<dyn Client>,
+    TAgent: FnOnce() -> Box<dyn Agent>,
 {
-    pub fn new(make_client: T) -> Self {
-        Self { make_client }
+    pub fn new(make_client: TClient, make_agent: TAgent) -> Self {
+        Self {
+            make_client,
+            make_agent,
+        }
     }
 }
 
@@ -34,39 +48,67 @@ struct MessageToClient {
     message: String,
 }
 
-impl<T> SessionHandler for Session<T>
+impl<TClient, TAgent> SessionHandler for Session<TClient, TAgent>
 where
-    T: FnOnce() -> Box<dyn Client>,
+    TClient: FnOnce() -> Box<dyn Client>,
+    TAgent: FnOnce() -> Box<dyn Agent>,
 {
     fn handle_session(self, mut channel: impl MessageChannel) {
         let mut model_client = (self.make_client)();
 
-        let _conversation = Conversation::new();
+        let mut conversation = {
+            let context = load_prompt_text("wizardvicuna_actionthought.txt");
+            let context = context.trim();
+            Conversation::new(context)
+        };
 
+        let agent = (self.make_agent)();
+
+        // Outermost conversation loop:
+        // 1. get message from user
+        // 2. send message to model a prompt, requesting a response
+        // 3. start receiving the response until the stream has ended.
         loop {
+            // 1. Get a message from a user.
             let message = channel.receive();
             let message: MessageFromClient = serde_json::from_str(&message).unwrap();
-            println!("message: {message:?}");
 
-            let request = ClientRequest::StartPredicting {
-                prompt: message.message,
-            };
+            conversation.add_user_message(message.message.clone());
 
-            model_client.send(request);
+            // Add an empty message from the assistant - this will be completed by the model.
+            conversation.add_assistant_message(String::new());
 
+            // 2. Tell the model to start predicting
+            {
+                let request = ClientRequest::StartPredicting {
+                    prompt: conversation.build_full_history(),
+                };
+
+                model_client.send(request);
+            }
+
+            // 3. Start receiving text from the model.
+            debug!("Starting streaming from model...");
             loop {
-                println!("getting response...");
                 let response = model_client.receive();
-                println!("got response: {response:?}");
+                // debug!("{response:?}");
+
+                if response.message_num() == 0 {
+                    conversation.add_assistant_message(response.text().into());
+                } else if response.is_stream_end() {
+                    conversation.push_eos_token();
+                } else {
+                    conversation.append_to_last_assistant_message(response.text());
+                }
 
                 channel.send(serde_json::to_string(&response).unwrap());
 
                 if response.is_stream_end() {
+                    debug!("...done (encountered stream end)");
+                    agent.handle_assistant_message(&mut conversation, &mut channel);
                     break;
                 }
             }
         }
-
-        println!("Session complete.");
     }
 }

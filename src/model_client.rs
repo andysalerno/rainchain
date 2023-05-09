@@ -1,3 +1,4 @@
+use log::debug;
 use serde::{Deserialize, Serialize};
 use std::net::TcpStream;
 use std::thread;
@@ -31,16 +32,14 @@ impl Client for WebsocketClient {
             thread::yield_now();
         };
 
-        println!("received from model: {json}");
-
+        // debug!("received from model: {json}");
         serde_json::from_str(&json).unwrap()
     }
 
     fn send(&mut self, message: ClientRequest) {
         let json = serde_json::to_string(&message).unwrap();
-        println!("json: {json}");
+        debug!("Sending json to client: {json}");
         let ws_message = Message::text(json);
-        println!("sending json: {ws_message:?}");
         self.connection.write_message(ws_message).unwrap();
     }
 }
@@ -79,6 +78,12 @@ impl ServerResponse {
         match self {
             Self::Tokens { text, .. } => text,
             Self::StreamEnd { .. } => panic!("Expected tokens"),
+        }
+    }
+
+    pub fn message_num(&self) -> usize {
+        match self {
+            Self::StreamEnd { message_num, .. } | Self::Tokens { message_num, .. } => *message_num,
         }
     }
 
