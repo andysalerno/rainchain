@@ -4,7 +4,7 @@ use crate::{
     model_client::{Client, ClientRequest},
     server::{MessageChannel, SessionHandler},
 };
-use log::debug;
+use log::{debug, trace};
 use serde::{Deserialize, Serialize};
 use std::fs;
 
@@ -66,8 +66,10 @@ where
 
         // Outermost conversation loop:
         // 1. get message from user
-        // 2. send message to model a prompt, requesting a response
+        // 2. send message to model as prompt, requesting a response
         // 3. start receiving the response until the stream has ended.
+        // 4. hand the response to the agent, and allow it to take the next step.
+        // 5. Repeat.
         loop {
             // 1. Get a message from a user.
             let message = channel.receive();
@@ -89,13 +91,11 @@ where
             debug!("Starting streaming from model...");
             loop {
                 let response = model_client.receive();
-                // debug!("{response:?}");
+                trace!("{response:?}");
 
                 if response.message_num() == 0 {
                     conversation.add_assistant_message(response.text().into());
-                } else if response.is_stream_end() {
-                    conversation.push_eos_token();
-                } else {
+                } else if !response.is_stream_end() {
                     conversation.append_to_last_assistant_message(response.text());
                 }
 
@@ -103,6 +103,9 @@ where
 
                 if response.is_stream_end() {
                     debug!("...done (encountered stream end)");
+                    debug!("{}", conversation.last_assistant_message());
+
+                    // 4. hand off the message to the agent, so it can decide what to do next.
                     agent.handle_assistant_message(&mut conversation, &mut channel);
                     break;
                 }

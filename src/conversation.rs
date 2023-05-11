@@ -1,5 +1,3 @@
-
-
 struct Message {
     pub message_num: usize,
     pub role: String,
@@ -70,6 +68,11 @@ impl Conversation {
             .expect("Can't append when no messages")
             .text
             .push_str(text);
+    }
+
+    pub fn last_assistant_message(&self) -> &str {
+        let last_message = self.assistant_messages.last().unwrap();
+        &last_message.text
     }
 
     pub fn build_full_history(&self) -> String {

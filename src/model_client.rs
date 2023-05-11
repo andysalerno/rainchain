@@ -119,7 +119,7 @@ impl ClientRequest {
             truncation_length: 2048,
             ban_eos_token: false,
             skip_special_tokens: true,
-            stopping_strings: Vec::new(),
+            stopping_strings: ["</s>".into(), "\n</action>".into()].into(),
         }
     }
 }
