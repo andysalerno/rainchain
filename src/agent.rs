@@ -1,4 +1,4 @@
-use crate::{conversation::Conversation, server::MessageChannel};
+use crate::{conversation::Conversation, model_client::ModelClient, server::MessageChannel};
 
 pub mod action_thought;
 
@@ -7,5 +7,6 @@ pub trait Agent {
         &self,
         conversation: &mut Conversation,
         channel: &mut dyn MessageChannel,
+        client: &dyn ModelClient,
     );
 }

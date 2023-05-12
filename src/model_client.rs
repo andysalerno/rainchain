@@ -1,13 +1,15 @@
 use log::{debug, trace};
+use reqwest::{Body, Method, Url};
 use serde::{Deserialize, Serialize};
 use std::net::TcpStream;
 use std::thread;
 
 use tungstenite::{stream::MaybeTlsStream, Message, WebSocket};
 
-pub trait Client {
+pub trait ModelClient {
     fn receive(&mut self) -> ServerResponse;
     fn send(&mut self, message: ClientRequest);
+    fn request_embeddings(&self, request: &EmbeddingsRequest) -> EmbeddingsResponse;
 }
 
 pub struct WebsocketClient {
@@ -22,7 +24,7 @@ impl WebsocketClient {
     }
 }
 
-impl Client for WebsocketClient {
+impl ModelClient for WebsocketClient {
     fn receive(&mut self) -> ServerResponse {
         let json = loop {
             if let Ok(message) = self.connection.read_message() {
@@ -41,6 +43,29 @@ impl Client for WebsocketClient {
         debug!("Sending json to client: {json}");
         let ws_message = Message::text(json);
         self.connection.write_message(ws_message).unwrap();
+    }
+
+    fn request_embeddings(&self, request: &EmbeddingsRequest) -> EmbeddingsResponse {
+        let client = reqwest::blocking::Client::new();
+
+        let url = Url::parse("http://archdesktop.local:5001/v1/embeddings")
+            .expect("Failed to parse target embeddings url");
+
+        let body = serde_json::to_string(request).expect("Failed to parse request to json");
+
+        let json = client
+            .post(url)
+            .body(body)
+            .send()
+            .expect("Failed tos end embeddings request")
+            .text()
+            .expect("Expected text response");
+
+        debug!("Got raw response: {json}");
+
+        let parsed: EmbeddingsResponse = serde_json::from_str(&json).unwrap();
+
+        todo!()
     }
 }
 
@@ -70,6 +95,31 @@ pub enum ClientRequest {
         skip_special_tokens: bool,
         stopping_strings: Vec<String>,
     },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EmbeddingsRequest {
+    text: String,
+}
+
+impl EmbeddingsRequest {
+    pub fn new(text: String) -> Self {
+        Self { text }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EmbeddingsResponse {
+    object: String,
+    data: Vec<Embedding>,
+    model: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Embedding {
+    object: String,
+    embedding: Vec<f32>,
+    index: usize,
 }
 
 // generate_params = {

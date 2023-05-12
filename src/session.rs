@@ -1,7 +1,7 @@
 use crate::{
     agent::Agent,
     conversation::Conversation,
-    model_client::{Client, ClientRequest},
+    model_client::{ClientRequest, ModelClient},
     server::{MessageChannel, SessionHandler},
 };
 use log::{debug, trace};
@@ -18,7 +18,7 @@ fn load_prompt_text(prompt_name: &str) -> String {
 #[derive(Clone)]
 pub struct Session<TClient, TAgent>
 where
-    TClient: FnOnce() -> Box<dyn Client>,
+    TClient: FnOnce() -> Box<dyn ModelClient>,
     TAgent: FnOnce() -> Box<dyn Agent>,
 {
     make_client: TClient,
@@ -27,7 +27,7 @@ where
 
 impl<TClient, TAgent> Session<TClient, TAgent>
 where
-    TClient: FnOnce() -> Box<dyn Client>,
+    TClient: FnOnce() -> Box<dyn ModelClient>,
     TAgent: FnOnce() -> Box<dyn Agent>,
 {
     pub fn new(make_client: TClient, make_agent: TAgent) -> Self {
@@ -50,7 +50,7 @@ struct MessageToClient {
 
 impl<TClient, TAgent> SessionHandler for Session<TClient, TAgent>
 where
-    TClient: FnOnce() -> Box<dyn Client>,
+    TClient: FnOnce() -> Box<dyn ModelClient>,
     TAgent: FnOnce() -> Box<dyn Agent>,
 {
     fn handle_session(self, mut channel: impl MessageChannel) {
@@ -106,7 +106,11 @@ where
                     debug!("{}", conversation.last_assistant_message());
 
                     // 4. hand off the message to the agent, so it can decide what to do next.
-                    agent.handle_assistant_message(&mut conversation, &mut channel);
+                    agent.handle_assistant_message(
+                        &mut conversation,
+                        &mut channel,
+                        model_client.as_ref(),
+                    );
                     break;
                 }
             }

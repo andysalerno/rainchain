@@ -3,7 +3,7 @@
 
 use env_logger::Env;
 use log::debug;
-use model_client::{Client, WebsocketClient};
+use model_client::{ModelClient, WebsocketClient};
 
 use crate::{
     agent::action_thought::ActionThought,
@@ -42,12 +42,9 @@ fn make_server() -> impl Server {
     WebsocketServer {}
 }
 
-fn make_client() -> impl Client + Sync + Send {
-    // WebsocketClient::connect("ws://archdesktop.local:5005/api/v1/stream")
-    WebsocketClient::connect(
-        "wss://resulted-dimension-words-sapphire.trycloudflare.com/api/v1/stream",
-    )
+fn make_client() -> impl ModelClient + Sync + Send {
+    WebsocketClient::connect("ws://archdesktop.local:5005/api/v1/stream")
     // WebsocketClient::connect(
-    //     "wss://proceedings-pending-requests-medicines.trycloudflare.com/api/v1/stream",
+    //     "wss://resulted-dimension-words-sapphire.trycloudflare.com/api/v1/stream",
     // )
 }

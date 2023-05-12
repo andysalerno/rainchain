@@ -2,6 +2,7 @@ use log::{debug, trace};
 
 use crate::{
     conversation::Conversation,
+    model_client::{self, ModelClient},
     server::MessageChannel,
     tools::{web_search::WebSearch, Tool},
 };
@@ -33,6 +34,7 @@ impl Agent for ActionThought {
         &self,
         conversation: &mut Conversation,
         channel: &mut dyn MessageChannel,
+        model_client: &dyn ModelClient,
     ) {
         debug!("ActionThought agent saw message from assistant.");
 
@@ -50,7 +52,7 @@ impl Agent for ActionThought {
             let tool = self.select_tool(&tool_name);
 
             debug!("Invoking tool...");
-            let tool_output = tool.get_output(&input);
+            let tool_output = tool.get_output(&input, model_client);
         } else {
             conversation.push_eos_token();
         }
