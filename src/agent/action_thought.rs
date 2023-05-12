@@ -36,18 +36,23 @@ impl Agent for ActionThought {
     ) {
         debug!("ActionThought agent saw message from assistant.");
 
-        if conversation
-            .last_assistant_message()
-            .ends_with("</action</s>")
-        {
+        if conversation.last_assistant_message().ends_with("</action") {
             debug!("Saw action in last message");
             let (thought, action) = extract_thought_action(conversation.last_assistant_message());
 
+            debug!("Extracted action: {action}");
+
             let (tool_name, input) = extract_tool_and_input(&action);
+
+            debug!("Extracted tool: {tool_name}");
+            debug!("Extracted input: {input}");
 
             let tool = self.select_tool(&tool_name);
 
+            debug!("Invoking tool...");
             let tool_output = tool.get_output(&input);
+        } else {
+            conversation.push_eos_token();
         }
     }
 }
@@ -80,7 +85,7 @@ fn extract_thought_action(text: &str) -> (String, String) {
         .split("<action>")
         .skip(1)
         .find(|t| !t.is_empty())
-        .and_then(|t| t.split("</action</s>").find(|t| !t.is_empty()))
+        .and_then(|t| t.split("</action").find(|t| !t.is_empty()))
         .map_or("", str::trim);
 
     (thought.into(), action.into())

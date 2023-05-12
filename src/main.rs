@@ -43,7 +43,10 @@ fn make_server() -> impl Server {
 }
 
 fn make_client() -> impl Client + Sync + Send {
-    WebsocketClient::connect("ws://archdesktop.local:5005/api/v1/stream")
+    // WebsocketClient::connect("ws://archdesktop.local:5005/api/v1/stream")
+    WebsocketClient::connect(
+        "wss://resulted-dimension-words-sapphire.trycloudflare.com/api/v1/stream",
+    )
     // WebsocketClient::connect(
     //     "wss://proceedings-pending-requests-medicines.trycloudflare.com/api/v1/stream",
     // )
