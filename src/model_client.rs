@@ -61,11 +61,9 @@ impl ModelClient for WebsocketClient {
             .text()
             .expect("Expected text response");
 
-        debug!("Got raw response: {json}");
-
         let parsed: EmbeddingsResponse = serde_json::from_str(&json).unwrap();
 
-        todo!()
+        parsed
     }
 }
 
