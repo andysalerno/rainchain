@@ -2,7 +2,7 @@ use log::{debug, trace};
 
 use crate::{
     conversation::Conversation,
-    model_client::{self, ModelClient},
+    model_client::{ModelClient},
     server::MessageChannel,
     tools::{web_search::WebSearch, Tool},
 };
@@ -33,14 +33,14 @@ impl Agent for ActionThought {
     fn handle_assistant_message(
         &self,
         conversation: &mut Conversation,
-        channel: &mut dyn MessageChannel,
+        _channel: &mut dyn MessageChannel,
         model_client: &dyn ModelClient,
     ) {
         debug!("ActionThought agent saw message from assistant.");
 
         if conversation.last_assistant_message().ends_with("</action") {
             debug!("Saw action in last message");
-            let (thought, action) = extract_thought_action(conversation.last_assistant_message());
+            let (_thought, action) = extract_thought_action(conversation.last_assistant_message());
 
             debug!("Extracted action: {action}");
 
@@ -52,7 +52,7 @@ impl Agent for ActionThought {
             let tool = self.select_tool(&tool_name);
 
             debug!("Invoking tool...");
-            let tool_output = tool.get_output(&input, model_client);
+            let _tool_output = tool.get_output(&input, model_client);
         } else {
             conversation.push_eos_token();
         }

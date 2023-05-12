@@ -1,5 +1,5 @@
 use log::{debug, trace};
-use reqwest::{Body, Method, Url};
+use reqwest::{Url};
 use serde::{Deserialize, Serialize};
 use std::net::TcpStream;
 use std::thread;

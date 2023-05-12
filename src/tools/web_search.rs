@@ -41,7 +41,7 @@ fn split_text_into_sections(input: &str) -> Vec<String> {
 fn get_embeddings(input: &[String]) {
     let first = input.first().unwrap();
 
-    let request = EmbeddingsRequest::new(first.into());
+    let _request = EmbeddingsRequest::new(first.into());
 }
 
 fn search(query: &str) -> Vec<String> {
