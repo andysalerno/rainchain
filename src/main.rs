@@ -21,7 +21,7 @@ mod tools;
 fn main() {
     // Logging startup
     {
-        let env = Env::default().filter_or("RUST_LOG", "debug");
+        let env = Env::default().filter_or("RUST_LOG", "rainchain=debug");
         env_logger::init_from_env(env);
         debug!("Starting up.");
     }

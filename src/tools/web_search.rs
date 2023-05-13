@@ -1,10 +1,11 @@
 use std::vec;
 
 use log::debug;
+use ordered_float::OrderedFloat;
 use readability::extractor;
 use serde::Deserialize;
 
-use crate::model_client::{EmbeddingsRequest, ModelClient};
+use crate::model_client::{Embedding, EmbeddingsRequest, ModelClient};
 
 use super::Tool;
 
@@ -14,17 +15,36 @@ impl Tool for WebSearch {
     fn get_output(&self, input: &str, model_client: &dyn ModelClient) -> String {
         let top_links = search(input);
 
-        let x: Vec<_> = top_links
+        let sections: Vec<_> = top_links
             .into_iter()
             .take(1)
             .map(|url| scrape(&url))
             .flat_map(|text| split_text_into_sections(&text))
             .collect();
 
-        let embeddings =
-            model_client.request_embeddings(&EmbeddingsRequest::new(x.first().unwrap().into()));
+        debug!("Getting embeddings...");
+        let embeddings_result = model_client.request_embeddings(&EmbeddingsRequest::new(sections));
+        debug!("Got embeddings.");
 
-        debug!("Got embeddings:\n{embeddings:?}");
+        let mut corpus_embeddings = embeddings_result.take_embeddings();
+        corpus_embeddings.sort_unstable_by_key(Embedding::index);
+
+        let user_input_embedding = {
+            let response =
+                model_client.request_embeddings(&EmbeddingsRequest::new(vec![input.into()]));
+            let embeddings = response.take_embeddings();
+            embeddings.into_iter().next().expect("Expected embeddings")
+        };
+
+        let mut with_scores: Vec<_> = corpus_embeddings
+            .into_iter()
+            .map(|e| {
+                let similarity = cosine_similarity(user_input_embedding.embedding(), e.embedding());
+                (e, OrderedFloat(similarity))
+            })
+            .collect();
+
+        with_scores.sort_unstable_by_key(|(_, score)| *score);
 
         String::new()
     }
@@ -38,10 +58,12 @@ fn split_text_into_sections(input: &str) -> Vec<String> {
     vec![input.into()]
 }
 
-fn get_embeddings(input: &[String]) {
-    let first = input.first().unwrap();
+fn cosine_similarity(vec1: &[f32], vec2: &[f32]) -> f32 {
+    let dot_product: f32 = vec1.iter().zip(vec2.iter()).map(|(a, b)| a * b).sum();
+    let magnitude_vec1: f32 = vec1.iter().map(|&n| n.powi(2)).sum::<f32>().sqrt();
+    let magnitude_vec2: f32 = vec2.iter().map(|&n| n.powi(2)).sum::<f32>().sqrt();
 
-    let _request = EmbeddingsRequest::new(first.into());
+    dot_product / (magnitude_vec1 * magnitude_vec2)
 }
 
 fn search(query: &str) -> Vec<String> {

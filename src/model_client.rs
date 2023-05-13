@@ -1,5 +1,5 @@
 use log::{debug, trace};
-use reqwest::{Url};
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::net::TcpStream;
 use std::thread;
@@ -97,12 +97,12 @@ pub enum ClientRequest {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EmbeddingsRequest {
-    text: String,
+    input: Vec<String>,
 }
 
 impl EmbeddingsRequest {
-    pub fn new(text: String) -> Self {
-        Self { text }
+    pub fn new(input: Vec<String>) -> Self {
+        Self { input }
     }
 }
 
@@ -113,11 +113,27 @@ pub struct EmbeddingsResponse {
     model: String,
 }
 
+impl EmbeddingsResponse {
+    pub fn take_embeddings(self) -> Vec<Embedding> {
+        self.data
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Embedding {
     object: String,
     embedding: Vec<f32>,
     index: usize,
+}
+
+impl Embedding {
+    pub fn index(&self) -> usize {
+        self.index
+    }
+
+    pub fn embedding(&self) -> &[f32] {
+        self.embedding.as_ref()
+    }
 }
 
 // generate_params = {
