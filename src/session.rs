@@ -93,9 +93,7 @@ where
                 let response = model_client.receive();
                 trace!("{response:?}");
 
-                if response.message_num() == 0 {
-                    conversation.add_assistant_message(response.text().into());
-                } else if !response.is_stream_end() {
+                if !response.is_stream_end() {
                     conversation.append_to_last_assistant_message(response.text());
                 }
 

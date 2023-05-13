@@ -16,7 +16,7 @@ impl Message {
     fn to_string(&self) -> String {
         let trimmed = self.text.trim();
         let role = &self.role;
-        format!("{role}: {trimmed}")
+        format!("{role}: {trimmed}").trim().to_owned()
     }
 }
 
@@ -57,7 +57,7 @@ impl Conversation {
         let eos_token = &self.eos_token;
         self.assistant_messages
             .last_mut()
-            .expect("Can't append when no messages")
+            .expect("Can't push EOS when no messages")
             .text
             .push_str(eos_token);
     }
