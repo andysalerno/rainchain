@@ -167,7 +167,7 @@ impl ClientRequest {
             max_new_tokens: 200,
             do_sample: true,
             temperature: 0.7,
-            top_p: 0.5,
+            top_p: 0.3,
             typical_p: 1.,
             repetition_penalty: 1.1,
             encoder_repetition_penalty: 1.1,
