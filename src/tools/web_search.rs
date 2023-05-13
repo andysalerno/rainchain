@@ -2,7 +2,7 @@ use std::vec;
 
 use log::debug;
 use ordered_float::OrderedFloat;
-use readability::extractor;
+use readability::{error::Error, extractor};
 use serde::Deserialize;
 
 use crate::model_client::{Embedding, EmbeddingsRequest, ModelClient};
@@ -17,17 +17,23 @@ impl Tool for WebSearch {
 
         let sections: Vec<_> = top_links
             .into_iter()
-            .take(1)
+            .take(10)
             .map(|url| scrape(&url))
+            .filter_map(Result::ok)
             .flat_map(|text| split_text_into_sections(&text))
             .collect();
 
         debug!("Getting embeddings...");
-        let embeddings_result = model_client.request_embeddings(&EmbeddingsRequest::new(sections));
-        debug!("Got embeddings.");
+        let embeddings_result =
+            model_client.request_embeddings(&EmbeddingsRequest::new(sections.clone()));
 
         let mut corpus_embeddings = embeddings_result.take_embeddings();
         corpus_embeddings.sort_unstable_by_key(Embedding::index);
+
+        {
+            let len = corpus_embeddings.len();
+            debug!("Got {len} embeddings.");
+        }
 
         let user_input_embedding = {
             let response =
@@ -44,8 +50,20 @@ impl Tool for WebSearch {
             })
             .collect();
 
-        with_scores.sort_unstable_by_key(|(_, score)| *score);
+        with_scores.sort_unstable_by_key(|(_, score)| -*score);
 
+        for (embedding, score) in with_scores.into_iter().take(3) {
+            let index = embedding.index();
+            let original_text = &sections[index];
+            let original_text = &original_text[0..100];
+            debug!("Score {score}: {original_text}");
+        }
+
+        // let top = with_scores.into_iter().take(3).map(|(embedding, score)| {
+        //     let index = embedding.index();
+        // });
+
+        debug!("Done.");
         String::new()
     }
 
@@ -86,10 +104,12 @@ fn search(query: &str) -> Vec<String> {
     response.items.into_iter().map(|i| i.link).collect()
 }
 
-fn scrape(url: &str) -> String {
-    let r = extractor::scrape(url).expect("Could not scrape url");
+fn scrape(url: &str) -> Result<String, Error> {
+    debug!("Scraping: {url}...");
+    let r = extractor::scrape(url)?;
+    debug!("Done.");
 
-    r.text
+    Ok(r.text)
 }
 
 fn get_api_key_cx() -> (String, String) {
