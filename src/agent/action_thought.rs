@@ -58,12 +58,12 @@ impl Agent for ActionThought {
             debug!("Got tool output: {tool_output}");
 
             conversation.append_to_last_assistant_message(&format!(
-                ">\n<output>\n{tool_output}\n</output>\n<response>\n"
+                ">\n<output>\n{tool_output}\n</output>\n<response>"
             ));
 
-            model_client.send(ClientRequest::start_predicting(dbg!(
-                conversation.build_full_history()
-            )));
+            model_client.send(ClientRequest::start_predicting(
+                conversation.build_full_history(),
+            ));
 
             NextStep::KeepPredicting
         } else {

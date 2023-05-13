@@ -40,7 +40,7 @@ impl ModelClient for WebsocketClient {
 
     fn send(&mut self, message: ClientRequest) {
         let json = serde_json::to_string(&message).unwrap();
-        debug!("Sending json to client: {json}");
+        trace!("Sending json to client: {json}");
         let ws_message = Message::text(json);
         self.connection.write_message(ws_message).unwrap();
     }
@@ -166,8 +166,8 @@ impl ClientRequest {
             prompt,
             max_new_tokens: 200,
             do_sample: true,
-            temperature: 0.5,
-            top_p: 1.,
+            temperature: 0.7,
+            top_p: 0.5,
             typical_p: 1.,
             repetition_penalty: 1.1,
             encoder_repetition_penalty: 1.1,

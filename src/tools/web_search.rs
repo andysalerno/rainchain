@@ -67,7 +67,7 @@ impl Tool for WebSearch {
             let original_text = &sections[index];
             debug!("Score {score}: {original_text}");
 
-            result.push_str(&format!("[REFERENCE {n}]: {original_text}\n"));
+            result.push_str(&format!("    [REFERENCE {n}]: {original_text}\n"));
         }
 
         // Trailing newline
