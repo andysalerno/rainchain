@@ -1,5 +1,5 @@
 use crate::{
-    agent::Agent,
+    agent::{Agent, NextStep},
     conversation::Conversation,
     model_client::{ClientRequest, ModelClient},
     server::{MessageChannel, SessionHandler},
@@ -106,12 +106,14 @@ where
                     debug!("{}", conversation.last_assistant_message());
 
                     // 4. hand off the message to the agent, so it can decide what to do next.
-                    agent.handle_assistant_message(
+                    if let NextStep::StopPredicting = agent.handle_assistant_message(
                         &mut conversation,
                         &mut channel,
-                        model_client.as_ref(),
-                    );
-                    break;
+                        model_client.as_mut(),
+                    ) {
+                        // The agent wants us to get from the user now, and stop predicting.
+                        break;
+                    }
                 }
             }
         }

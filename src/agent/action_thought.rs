@@ -1,8 +1,9 @@
 use log::{debug, trace};
 
 use crate::{
+    agent::NextStep,
     conversation::Conversation,
-    model_client::{ModelClient},
+    model_client::{ClientRequest, ModelClient},
     server::MessageChannel,
     tools::{web_search::WebSearch, Tool},
 };
@@ -34,8 +35,8 @@ impl Agent for ActionThought {
         &self,
         conversation: &mut Conversation,
         _channel: &mut dyn MessageChannel,
-        model_client: &dyn ModelClient,
-    ) {
+        model_client: &mut dyn ModelClient,
+    ) -> NextStep {
         debug!("ActionThought agent saw message from assistant.");
 
         if conversation.last_assistant_message().ends_with("</action") {
@@ -52,9 +53,23 @@ impl Agent for ActionThought {
             let tool = self.select_tool(&tool_name);
 
             debug!("Invoking tool...");
-            let _tool_output = tool.get_output(&input, model_client);
+            let last_user_message = conversation.last_user_message();
+            let tool_output = tool.get_output(&input, last_user_message, model_client);
+            debug!("Got tool output: {tool_output}");
+
+            conversation.append_to_last_assistant_message(&format!(
+                ">\n<output>\n{tool_output}\n</output>\n<response>\n"
+            ));
+
+            model_client.send(ClientRequest::start_predicting(dbg!(
+                conversation.build_full_history()
+            )));
+
+            NextStep::KeepPredicting
         } else {
             conversation.push_eos_token();
+
+            NextStep::StopPredicting
         }
     }
 }

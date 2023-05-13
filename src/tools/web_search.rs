@@ -9,18 +9,26 @@ use crate::model_client::{Embedding, EmbeddingsRequest, ModelClient};
 
 use super::Tool;
 
+const MAX_SECTION_LEN: usize = 400;
+const TOP_N_SECTIONS: usize = 4;
+
 pub struct WebSearch;
 
 impl Tool for WebSearch {
-    fn get_output(&self, input: &str, model_client: &dyn ModelClient) -> String {
+    fn get_output(
+        &self,
+        input: &str,
+        user_message: &str,
+        model_client: &dyn ModelClient,
+    ) -> String {
         let top_links = search(input);
 
         let sections: Vec<_> = top_links
             .into_iter()
-            .take(10)
+            .take(5)
             .map(|url| scrape(&url))
             .filter_map(Result::ok)
-            .flat_map(|text| split_text_into_sections(&text))
+            .flat_map(|text| split_text_into_sections(text, MAX_SECTION_LEN))
             .collect();
 
         debug!("Getting embeddings...");
@@ -37,11 +45,12 @@ impl Tool for WebSearch {
 
         let user_input_embedding = {
             let response =
-                model_client.request_embeddings(&EmbeddingsRequest::new(vec![input.into()]));
+                model_client.request_embeddings(&EmbeddingsRequest::new(vec![user_message.into()]));
             let embeddings = response.take_embeddings();
             embeddings.into_iter().next().expect("Expected embeddings")
         };
 
+        debug!("Finding closest matches for: {user_message}");
         let mut with_scores: Vec<_> = corpus_embeddings
             .into_iter()
             .map(|e| {
@@ -52,19 +61,19 @@ impl Tool for WebSearch {
 
         with_scores.sort_unstable_by_key(|(_, score)| -*score);
 
-        for (embedding, score) in with_scores.into_iter().take(3) {
+        let mut result = String::new();
+        for (n, (embedding, score)) in with_scores.into_iter().take(TOP_N_SECTIONS).enumerate() {
             let index = embedding.index();
             let original_text = &sections[index];
-            let original_text = &original_text[0..100];
             debug!("Score {score}: {original_text}");
+
+            result.push_str(&format!("[REFERENCE {n}]: {original_text}\n"));
         }
 
-        // let top = with_scores.into_iter().take(3).map(|(embedding, score)| {
-        //     let index = embedding.index();
-        // });
+        // Trailing newline
+        result.pop();
 
-        debug!("Done.");
-        String::new()
+        result
     }
 
     fn name(&self) -> &str {
@@ -72,8 +81,29 @@ impl Tool for WebSearch {
     }
 }
 
-fn split_text_into_sections(input: &str) -> Vec<String> {
-    vec![input.into()]
+fn split_text_into_sections(input: impl Into<String>, max_section_len: usize) -> Vec<String> {
+    let mut result = Vec::<String>::new();
+
+    let input: String = input.into();
+
+    for sentence in input
+        .split_terminator(&['.', '\n'])
+        .filter(|s| !s.is_empty())
+    {
+        let sentence = sentence.to_owned();
+        if let Some(last) = result.last_mut() {
+            if last.len() + sentence.len() > max_section_len {
+                result.push(sentence);
+            } else {
+                last.push_str(". ");
+                last.push_str(&sentence);
+            }
+        } else {
+            result.push(sentence);
+        }
+    }
+
+    result
 }
 
 fn cosine_similarity(vec1: &[f32], vec2: &[f32]) -> f32 {

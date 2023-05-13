@@ -75,6 +75,11 @@ impl Conversation {
         &last_message.text
     }
 
+    pub fn last_user_message(&self) -> &str {
+        let last_message = self.user_messages.last().unwrap();
+        &last_message.text
+    }
+
     pub fn build_full_history(&self) -> String {
         let mut combined = String::new();
 
