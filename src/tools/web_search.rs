@@ -1,4 +1,4 @@
-use std::vec;
+use std::{error::Error, vec};
 
 use log::{debug, trace};
 use ordered_float::OrderedFloat;
@@ -27,7 +27,7 @@ impl Tool for WebSearch {
             .into_iter()
             .take(5)
             .map(|url| scrape(&url))
-            // .filter_map(Result::ok)
+            .filter_map(Result::ok)
             .flat_map(|text| split_text_into_sections(text, MAX_SECTION_LEN))
             .collect();
 
@@ -67,7 +67,7 @@ impl Tool for WebSearch {
             let original_text = &sections[index];
             debug!("Score {score}: {original_text}");
 
-            result.push_str(&format!("    [REFERENCE {n}]: {original_text}\n"));
+            result.push_str(&format!("    [WEB_RESULT {n}]: {original_text}\n"));
         }
 
         // Trailing newline
@@ -134,9 +134,9 @@ fn search(query: &str) -> Vec<String> {
     response.items.into_iter().map(|i| i.link).collect()
 }
 
-fn scrape(url: &str) -> std::string::String {
+fn scrape(url: &str) -> Result<String, Box<dyn Error>> {
     debug!("Scraping: {url}...");
-    let client = reqwest::blocking::get(url).unwrap();
+    let client = reqwest::blocking::get(url)?;
     let s = client.text().unwrap();
     let mut readability = readable_readability::Readability::new();
     let (node_ref, _metadata) = readability
@@ -150,7 +150,7 @@ fn scrape(url: &str) -> std::string::String {
 
     trace!("Scraped text:\n{text_content}");
 
-    text_content
+    Ok(text_content)
 }
 
 fn get_api_key_cx() -> (String, String) {
