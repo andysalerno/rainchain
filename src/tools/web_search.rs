@@ -1,8 +1,8 @@
-use std::vec;
+use std::{error::Error, vec};
 
 use log::debug;
 use ordered_float::OrderedFloat;
-use readability::{error::Error, extractor};
+use reqwest::Url;
 use serde::Deserialize;
 
 use crate::model_client::{Embedding, EmbeddingsRequest, ModelClient};
@@ -27,7 +27,7 @@ impl Tool for WebSearch {
             .into_iter()
             .take(5)
             .map(|url| scrape(&url))
-            .filter_map(Result::ok)
+            // .filter_map(Result::ok)
             .flat_map(|text| split_text_into_sections(text, MAX_SECTION_LEN))
             .collect();
 
@@ -134,12 +134,26 @@ fn search(query: &str) -> Vec<String> {
     response.items.into_iter().map(|i| i.link).collect()
 }
 
-fn scrape(url: &str) -> Result<String, Error> {
+fn scrape(url: &str) -> std::string::String {
     debug!("Scraping: {url}...");
-    let r = extractor::scrape(url)?;
+    // let r = extractor::scrape(url)?;
+    let client = reqwest::blocking::get(url).unwrap();
+    let s = client.text().unwrap();
+    let mut readability = readable_readability::Readability::new();
+    let (node_ref, metadata) = readability
+        .strip_unlikelys(true)
+        .clean_attributes(true)
+        .parse(&s);
+
+    // node_ref.text_contents()
+
     debug!("Done.");
 
-    Ok(r.text)
+    let text_content = node_ref.text_contents();
+
+    debug!("Got text:\n{text_content}");
+
+    text_content
 }
 
 fn get_api_key_cx() -> (String, String) {
