@@ -1,4 +1,4 @@
-use log::{debug, trace};
+use log::{trace};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::net::TcpStream;

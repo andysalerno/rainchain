@@ -1,8 +1,8 @@
-use std::{error::Error, vec};
+use std::{vec};
 
 use log::debug;
 use ordered_float::OrderedFloat;
-use reqwest::Url;
+
 use serde::Deserialize;
 
 use crate::model_client::{Embedding, EmbeddingsRequest, ModelClient};
@@ -140,7 +140,7 @@ fn scrape(url: &str) -> std::string::String {
     let client = reqwest::blocking::get(url).unwrap();
     let s = client.text().unwrap();
     let mut readability = readable_readability::Readability::new();
-    let (node_ref, metadata) = readability
+    let (node_ref, _metadata) = readability
         .strip_unlikelys(true)
         .clean_attributes(true)
         .parse(&s);
