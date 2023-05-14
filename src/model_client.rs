@@ -1,4 +1,4 @@
-use log::{trace};
+use log::trace;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::net::TcpStream;
@@ -166,8 +166,8 @@ impl ClientRequest {
             prompt,
             max_new_tokens: 200,
             do_sample: true,
-            temperature: 0.7,
-            top_p: 0.3,
+            temperature: 0.5,
+            top_p: 0.5,
             typical_p: 1.,
             repetition_penalty: 1.1,
             encoder_repetition_penalty: 1.1,
@@ -183,7 +183,7 @@ impl ClientRequest {
             truncation_length: 2048,
             ban_eos_token: false,
             skip_special_tokens: true,
-            stopping_strings: ["</s>".into(), "\n</action>".into()].into(),
+            stopping_strings: ["</s>".into(), "\n</action>".into(), "\n</response>".into()].into(),
         }
     }
 }

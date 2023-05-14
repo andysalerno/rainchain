@@ -90,7 +90,7 @@ fn split_text_into_sections(input: impl Into<String>, max_section_len: usize) ->
         .split_terminator(&['.', '\n'])
         .filter(|s| !s.is_empty())
     {
-        let sentence = sentence.to_owned();
+        let sentence = sentence.trim().to_owned();
         if let Some(last) = result.last_mut() {
             if last.len() + sentence.len() > max_section_len {
                 result.push(sentence);
@@ -150,7 +150,7 @@ fn scrape(url: &str) -> Result<String, Box<dyn Error>> {
 
     trace!("Scraped text:\n{text_content}");
 
-    Ok(text_content)
+    Ok(text_content.trim().into())
 }
 
 fn get_api_key_cx() -> (String, String) {

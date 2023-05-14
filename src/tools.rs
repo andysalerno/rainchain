@@ -1,5 +1,6 @@
 use crate::model_client::ModelClient;
 
+pub mod noop;
 pub mod web_search;
 
 pub trait Tool {

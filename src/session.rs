@@ -101,7 +101,10 @@ where
 
                 if response.is_stream_end() {
                     debug!("...done (encountered stream end)");
-                    debug!("{}", conversation.last_assistant_message());
+                    debug!(
+                        "Last agent message: {}",
+                        conversation.last_assistant_message()
+                    );
 
                     // 4. hand off the message to the agent, so it can decide what to do next.
                     if let NextStep::StopPredicting = agent.handle_assistant_message(

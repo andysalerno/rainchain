@@ -5,7 +5,7 @@ use crate::{
     conversation::Conversation,
     model_client::{ClientRequest, ModelClient},
     server::MessageChannel,
-    tools::{web_search::WebSearch, Tool},
+    tools::{noop::Noop, web_search::WebSearch, Tool},
 };
 
 use super::Agent;
@@ -17,7 +17,7 @@ pub struct ActionThought {
 impl ActionThought {
     pub fn new() -> Self {
         Self {
-            tools: vec![Box::new(WebSearch)],
+            tools: vec![Box::new(WebSearch), Box::new(Noop)],
         }
     }
 
@@ -66,6 +66,14 @@ impl Agent for ActionThought {
             ));
 
             NextStep::KeepPredicting
+        } else if conversation
+            .last_assistant_message()
+            .ends_with("</response")
+        {
+            conversation.append_to_last_assistant_message(">");
+            conversation.push_eos_token();
+
+            NextStep::StopPredicting
         } else {
             conversation.push_eos_token();
 
@@ -81,9 +89,13 @@ fn extract_tool_and_input(text: &str) -> (String, String) {
 
     let tool = text.split('(').next().unwrap().trim();
 
-    let input = text.split('(').nth(1).unwrap().trim().trim_end_matches(')');
+    if tool == "NONE" {
+        (tool.into(), String::new())
+    } else {
+        let input = text.split('(').nth(1).unwrap().trim().trim_end_matches(')');
 
-    (tool.into(), input.into())
+        (tool.into(), input.into())
+    }
 }
 
 /// A hacky and dirty pseudo-xml extractor
