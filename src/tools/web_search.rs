@@ -1,6 +1,6 @@
-use std::{vec};
+use std::vec;
 
-use log::debug;
+use log::{debug, trace};
 use ordered_float::OrderedFloat;
 
 use serde::Deserialize;
@@ -136,7 +136,6 @@ fn search(query: &str) -> Vec<String> {
 
 fn scrape(url: &str) -> std::string::String {
     debug!("Scraping: {url}...");
-    // let r = extractor::scrape(url)?;
     let client = reqwest::blocking::get(url).unwrap();
     let s = client.text().unwrap();
     let mut readability = readable_readability::Readability::new();
@@ -145,13 +144,11 @@ fn scrape(url: &str) -> std::string::String {
         .clean_attributes(true)
         .parse(&s);
 
-    // node_ref.text_contents()
-
     debug!("Done.");
 
     let text_content = node_ref.text_contents();
 
-    debug!("Got text:\n{text_content}");
+    trace!("Scraped text:\n{text_content}");
 
     text_content
 }
