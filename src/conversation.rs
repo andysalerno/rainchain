@@ -21,7 +21,7 @@ impl Message {
 }
 
 pub struct Conversation {
-    context: String,
+    base_prompt: String,
     user_messages: Vec<Message>,
     assistant_messages: Vec<Message>,
     user_role: String,
@@ -30,9 +30,9 @@ pub struct Conversation {
 }
 
 impl Conversation {
-    pub fn new(context: impl Into<String>) -> Self {
+    pub fn new(base_prompt: impl Into<String>) -> Self {
         Self {
-            context: context.into(),
+            base_prompt: base_prompt.into(),
             user_messages: Vec::new(),
             assistant_messages: Vec::new(),
             user_role: "USER".into(),
@@ -83,7 +83,7 @@ impl Conversation {
     pub fn build_full_history(&self) -> String {
         let mut combined = String::new();
 
-        combined.push_str(&self.context);
+        combined.push_str(&self.base_prompt);
 
         let mut all_messages = self
             .user_messages
