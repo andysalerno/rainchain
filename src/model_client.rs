@@ -179,7 +179,7 @@ impl ClientRequest {
             length_penalty: 1.,
             early_stopping: false,
             seed: -1,
-            add_bos_token: true,
+            add_bos_token: false,
             truncation_length: 2048,
             ban_eos_token: false,
             skip_special_tokens: true,

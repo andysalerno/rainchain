@@ -1,4 +1,5 @@
 use log::{debug, trace};
+use serde::Serialize;
 
 use crate::{
     agent::NextStep,
@@ -12,6 +13,12 @@ use super::Agent;
 
 pub struct ActionThought {
     tools: Vec<Box<dyn Tool>>,
+}
+
+#[derive(Serialize)]
+struct ToolInfoMessage {
+    event: String,
+    text: String,
 }
 
 impl ActionThought {
@@ -34,33 +41,37 @@ impl Agent for ActionThought {
     fn handle_assistant_message(
         &self,
         conversation: &mut Conversation,
-        _channel: &mut dyn MessageChannel,
+        channel: &mut dyn MessageChannel,
         model_client: &mut dyn ModelClient,
     ) -> NextStep {
         debug!("ActionThought agent saw message from assistant.");
 
         if conversation.last_assistant_message().ends_with("</action") {
             debug!("Saw action in last message");
+
+            // Parse message for tool
             let (_thought, action) = extract_thought_action(conversation.last_assistant_message());
-
             debug!("Extracted action: {action}");
-
             let (tool_name, input) = extract_tool_and_input(&action);
-
             debug!("Extracted tool: {tool_name}");
             debug!("Extracted input: {input}");
-
             let tool = self.select_tool(&tool_name);
 
+            // Invoke tool
             debug!("Invoking tool...");
             let last_user_message = conversation.last_user_message();
             let tool_output = tool.get_output(&input, last_user_message, model_client);
             debug!("Got tool output: {tool_output}");
 
-            conversation.append_to_last_assistant_message(&format!(
+            // Update with tool output
+            let message = conversation.last_assistant_message_mut();
+            message.set_baggage("tool_output", &tool_output);
+            message.set_baggage("tool_name", &tool_name);
+            message.append(&format!(
                 ">\n<output>\n{tool_output}\n</output>\n<response>"
             ));
 
+            // Request model to complete response
             model_client.send(ClientRequest::start_predicting(
                 conversation.build_full_history(),
             ));
@@ -72,6 +83,22 @@ impl Agent for ActionThought {
         {
             conversation.append_to_last_assistant_message(">");
             conversation.push_eos_token();
+
+            let tool_info = {
+                let last_msg = conversation.last_assistant_message_mut();
+                last_msg.baggage().get("tool_output")
+            };
+
+            if let Some(tool_info) = tool_info {
+                // Push the tool output to the UI so the user can inspect it if they choose.
+                let tool_info_msg = ToolInfoMessage {
+                    event: "ToolInfo".to_owned(),
+                    text: tool_info.to_string(),
+                };
+
+                debug!("Sending tool info to UI...");
+                channel.send(serde_json::to_string(&tool_info_msg).unwrap());
+            }
 
             NextStep::StopPredicting
         } else {

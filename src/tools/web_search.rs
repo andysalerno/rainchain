@@ -1,4 +1,4 @@
-use std::{error::Error, vec};
+use std::{error::Error, time::Duration, vec};
 
 use log::{debug, trace};
 use ordered_float::OrderedFloat;
@@ -123,6 +123,7 @@ fn search(query: &str) -> Vec<String> {
     let response = client
         .get("https://www.googleapis.com/customsearch/v1")
         .query(&[("key", api_key.as_str()), ("cx", cx.as_str()), ("q", query)])
+        .timeout(Duration::from_millis(5000))
         .send()
         .unwrap()
         .json::<Response>()
@@ -136,8 +137,12 @@ fn search(query: &str) -> Vec<String> {
 
 fn scrape(url: &str) -> Result<String, Box<dyn Error>> {
     debug!("Scraping: {url}...");
-    let client = reqwest::blocking::get(url)?;
-    let s = client.text().unwrap();
+    let client = reqwest::blocking::ClientBuilder::new()
+        .timeout(Duration::from_millis(500))
+        .build()?;
+
+    let response = client.get(url).send()?;
+    let s = response.text()?;
     let mut readability = readable_readability::Readability::new();
     let (node_ref, _metadata) = readability
         .strip_unlikelys(true)

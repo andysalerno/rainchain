@@ -1,7 +1,10 @@
-struct Message {
-    pub message_num: usize,
-    pub role: String,
-    pub text: String,
+use std::collections::HashMap;
+
+pub struct Message {
+    message_num: usize,
+    role: String,
+    text: String,
+    baggage: HashMap<String, String>,
 }
 
 impl Message {
@@ -10,7 +13,20 @@ impl Message {
             message_num,
             role,
             text,
+            baggage: HashMap::new(),
         }
+    }
+
+    pub fn append(&mut self, text: &str) {
+        self.text.push_str(text);
+    }
+
+    pub fn baggage(&self) -> &HashMap<String, String> {
+        &self.baggage
+    }
+
+    pub fn set_baggage(&mut self, key: &str, value: &str) {
+        self.baggage.insert(key.into(), value.into());
     }
 
     fn to_string(&self) -> String {
@@ -54,25 +70,23 @@ impl Conversation {
     }
 
     pub fn push_eos_token(&mut self) {
-        let eos_token = &self.eos_token;
-        self.assistant_messages
-            .last_mut()
-            .expect("Can't push EOS when no messages")
-            .text
-            .push_str(eos_token);
+        let eos_token = self.eos_token.clone();
+        self.last_assistant_message_mut().append(&eos_token);
     }
 
     pub fn append_to_last_assistant_message(&mut self, text: &str) {
-        self.assistant_messages
-            .last_mut()
-            .expect("Can't append when no messages")
-            .text
-            .push_str(text);
+        self.last_assistant_message_mut().append(text);
     }
 
     pub fn last_assistant_message(&self) -> &str {
         let last_message = self.assistant_messages.last().unwrap();
         &last_message.text
+    }
+
+    pub fn last_assistant_message_mut(&mut self) -> &mut Message {
+        self.assistant_messages
+            .last_mut()
+            .expect("Expected at least one message from the assistant")
     }
 
     pub fn last_user_message(&self) -> &str {

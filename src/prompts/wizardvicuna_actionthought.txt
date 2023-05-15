@@ -69,5 +69,5 @@ Below is a never-ending interaction between ASSISTANT and USER, following the co
 
 CURRENT DATE: May 14, 2023
 
-// Valid ACTIONs for this conversation: [ WEB_SEARCH, NONE ]
+// Enabled ACTIONs for this conversation: [ WEB_SEARCH, NONE ]
 Begin!
