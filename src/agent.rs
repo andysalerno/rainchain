@@ -15,4 +15,6 @@ pub trait Agent {
         channel: &mut dyn MessageChannel,
         client: &mut dyn ModelClient,
     ) -> NextStep;
+
+    fn bot_message_prefix(&self) -> String;
 }

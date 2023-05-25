@@ -107,6 +107,10 @@ impl Agent for ActionThought {
             NextStep::StopPredicting
         }
     }
+
+    fn bot_message_prefix(&self) -> String {
+        " <thought>".to_owned()
+    }
 }
 
 fn extract_tool_and_input(text: &str) -> (String, String) {

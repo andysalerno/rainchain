@@ -6,6 +6,8 @@ use std::thread;
 
 use tungstenite::{stream::MaybeTlsStream, Message, WebSocket};
 
+const EMBEDDINGS_URI: &str = "http://archdesktop.local:5001/v1/embeddings";
+
 pub trait ModelClient {
     fn receive(&mut self) -> ServerResponse;
     fn send(&mut self, message: ClientRequest);
@@ -48,8 +50,7 @@ impl ModelClient for WebsocketClient {
     fn request_embeddings(&self, request: &EmbeddingsRequest) -> EmbeddingsResponse {
         let client = reqwest::blocking::Client::new();
 
-        let url = Url::parse("http://archdesktop.local:5001/v1/embeddings")
-            .expect("Failed to parse target embeddings url");
+        let url = Url::parse(EMBEDDINGS_URI).expect("Failed to parse target embeddings url");
 
         let body = serde_json::to_string(request).expect("Failed to parse request to json");
 
@@ -166,11 +167,11 @@ impl ClientRequest {
             prompt,
             max_new_tokens: 200,
             do_sample: true,
-            temperature: 0.5,
-            top_p: 0.5,
+            temperature: 0.5, // stable at 0.5
+            top_p: 0.5,       // stable at 0.5
             typical_p: 1.,
             repetition_penalty: 1.1,
-            encoder_repetition_penalty: 1.1,
+            encoder_repetition_penalty: 1.05, // stable at 1.1
             top_k: 0,
             min_length: 0,
             no_repeat_ngram_size: 0,

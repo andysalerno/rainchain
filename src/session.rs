@@ -80,6 +80,8 @@ where
             // Add an empty message from the assistant - this will be completed by the model.
             conversation.add_assistant_message(String::new());
 
+            conversation.append_to_last_assistant_message(&agent.bot_message_prefix());
+
             // 2. Tell the model to start predicting
             {
                 let request = ClientRequest::start_predicting(conversation.build_full_history());

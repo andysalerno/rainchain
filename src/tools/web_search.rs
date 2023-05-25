@@ -25,9 +25,10 @@ impl Tool for WebSearch {
 
         let sections: Vec<_> = top_links
             .into_iter()
-            .take(5)
+            .take(6)
             .map(|url| scrape(&url))
             .filter_map(Result::ok)
+            .filter(|text| text.len() > 50)
             .flat_map(|text| split_text_into_sections(text, MAX_SECTION_LEN))
             .collect();
 
@@ -43,14 +44,17 @@ impl Tool for WebSearch {
             debug!("Got {len} embeddings.");
         }
 
+        let user_embed_str: String = input.into();
+
         let user_input_embedding = {
             let response =
-                model_client.request_embeddings(&EmbeddingsRequest::new(vec![user_message.into()]));
+                // model_client.request_embeddings(&EmbeddingsRequest::new(vec![user_message.into()]));
+                model_client.request_embeddings(&EmbeddingsRequest::new(vec![user_embed_str.clone()]));
             let embeddings = response.take_embeddings();
             embeddings.into_iter().next().expect("Expected embeddings")
         };
 
-        debug!("Finding closest matches for: {user_message}");
+        debug!("Finding closest matches for: {user_embed_str}");
         let mut with_scores: Vec<_> = corpus_embeddings
             .into_iter()
             .map(|e| {
