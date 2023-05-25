@@ -98,7 +98,7 @@ pub enum ClientRequest {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EmbeddingsRequest {
-    input: Vec<String>,
+    pub input: Vec<String>,
 }
 
 impl EmbeddingsRequest {
@@ -109,9 +109,9 @@ impl EmbeddingsRequest {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EmbeddingsResponse {
-    object: String,
-    data: Vec<Embedding>,
-    model: String,
+    pub object: String,
+    pub data: Vec<Embedding>,
+    pub model: String,
 }
 
 impl EmbeddingsResponse {
