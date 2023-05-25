@@ -24,6 +24,10 @@ impl GuidanceResponse {
             .get(key)
             .expect("Expected to find the key, but did not.")
     }
+
+    pub fn text(&self) -> &str {
+        &self.text
+    }
 }
 
 pub struct GuidanceClient {

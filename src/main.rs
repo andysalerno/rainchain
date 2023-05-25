@@ -39,7 +39,7 @@ fn main() {
     let user_input = "What's the best smartphone I can buy today?";
 
     let request = GuidanceRequestBuilder::new(prompt_chat)
-        .with_parameter("preamble", prompt_preamble)
+        .with_parameter("preamble", &prompt_preamble)
         .with_parameter("history", "")
         .with_parameter("user_input", user_input)
         .with_parameter_list("valid_actions", &["WEB_SEARCH", "NONE"])
@@ -54,8 +54,15 @@ fn main() {
     // Now we must provide OUTPUT:
     let tool = WebSearch;
     let output = tool.get_output(action_input, action_input, &guidance_client);
-
     info!("Got tool output:\n{output}");
+
+    // Send OUTPUT back to model and let it continue:
+    let ongoing_chat = response.text();
+    let request = GuidanceRequestBuilder::new(ongoing_chat)
+        .with_parameter("output", output)
+        .build();
+    let response = guidance_client.get_response(&request);
+    info!("Got response: {response:?}");
 }
 
 fn old_run() {
