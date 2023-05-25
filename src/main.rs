@@ -1,7 +1,7 @@
 #![deny(clippy::pedantic)]
 #![allow(clippy::module_name_repetitions)]
 
-use std::fs;
+use std::{fs, io::Write};
 
 use env_logger::Env;
 use guidance_client::{GuidanceClient, GuidanceRequestBuilder};
@@ -34,35 +34,59 @@ fn main() {
     let guidance_client = GuidanceClient::new("http://archdesktop.local:8000");
 
     let prompt_preamble = load_prompt_text("guider_preamble.txt");
+    let preamble_len = prompt_preamble.len();
     let prompt_chat = load_prompt_text("guider_chat.txt");
 
-    let user_input = "What's the best smartphone I can buy today?";
+    let mut history = String::new();
 
-    let request = GuidanceRequestBuilder::new(prompt_chat)
-        .with_parameter("preamble", &prompt_preamble)
-        .with_parameter("history", "")
-        .with_parameter("user_input", user_input)
-        .with_parameter_list("valid_actions", &["WEB_SEARCH", "NONE"])
-        .build();
+    loop {
+        // Get user's input:
+        let mut user_input = String::new();
+        {
+            print!("Type your message: ");
+            std::io::stdout().flush().unwrap();
+            std::io::stdin().read_line(&mut user_input).unwrap();
+            user_input = user_input.trim().to_string();
+        }
 
-    // The first response will have THOUGHT and ACTION filled out.
-    let response = guidance_client.get_response(&request);
-    let action = response.expect_variable("action").trim();
-    let action_input = response.expect_variable("action_input").trim();
-    info!("Got response: {response:?}");
+        let request = GuidanceRequestBuilder::new(&prompt_chat)
+            .with_parameter("preamble", &prompt_preamble)
+            .with_parameter("history", history)
+            .with_parameter("user_input", user_input)
+            .with_parameter_list("valid_actions", &["WEB_SEARCH", "NONE"])
+            .build();
 
-    // Now we must provide OUTPUT:
-    let tool = WebSearch;
-    let output = tool.get_output(action_input, action_input, &guidance_client);
-    info!("Got tool output:\n{output}");
+        // The first response will have THOUGHT and ACTION filled out.
+        let response = guidance_client.get_response(&request);
+        let action = response.expect_variable("action").trim();
+        let action_input = response.expect_variable("action_input").trim();
+        info!("Got response: {response:?}");
 
-    // Send OUTPUT back to model and let it continue:
-    let ongoing_chat = response.text();
-    let request = GuidanceRequestBuilder::new(ongoing_chat)
-        .with_parameter("output", output)
-        .build();
-    let response = guidance_client.get_response(&request);
-    info!("Got response: {response:?}");
+        // Now we must provide OUTPUT:
+        let tool = WebSearch;
+        let output = tool.get_output(action_input, action_input, &guidance_client);
+        info!("Got tool output:\n{output}");
+
+        // Send OUTPUT back to model and let it continue:
+        let ongoing_chat = response.text();
+        let request = GuidanceRequestBuilder::new(ongoing_chat)
+            .with_parameter("output", output)
+            .build();
+        let response = guidance_client.get_response(&request);
+        info!("Got response: {response:?}");
+
+        history = response.text().to_owned();
+        history = history.drain(preamble_len..).collect();
+        history = history.trim_start().to_owned();
+        // Clear out any "output" sections from history, to save up space in our LLM context
+        // major hack:
+        history = history
+            .lines()
+            .filter(|l| !l.trim_start().starts_with("[WEB_RESULT"))
+            .collect::<Vec<&str>>()
+            .join("\n");
+        info!("New history:\n{history}");
+    }
 }
 
 fn old_run() {
