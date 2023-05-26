@@ -1,15 +1,17 @@
 {{~preamble}}
-{{history}}
+{{history~}}
 {{#user~}}
 {{user_input}}
 {{~/user}}
 {{#assistant~}}
-<thought>{{gen 'thought' stop='</thought>'}}</thought>
+<thought>
+    I will use {{select 'thought_action' options=valid_actions}} because {{gen 'action_reason'}}
+</thought>
 <action>
     {{select 'action' options=valid_actions}}({{gen 'action_input'}})
 </action>
 <output>
-    {{await 'output'}}
+{{await 'output'}}
 </output>
 <response>{{gen 'response' stop='</response>'}}</response>
 {{~/assistant}}

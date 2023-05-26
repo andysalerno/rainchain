@@ -32,7 +32,7 @@ fn main() {
     }
 
     // let guidance_client = GuidanceClient::new("http://archdesktop.local:8000");
-    let guidance_client = GuidanceClient::new("https://6513-34-135-217-163.ngrok-free.app");
+    let guidance_client = GuidanceClient::new("https://notebooksa.jarvislabs.ai/VFf_4YoJ8gJEGdpQJly08ncRAEVFJx3ndc5HcZZ9YocGcmyPON0Y1MdLSduZx4dpIS/proxy/8000");
 
     let prompt_preamble = load_prompt_text("guider_preamble.txt");
     let preamble_len = prompt_preamble.len();
@@ -78,7 +78,7 @@ fn main() {
 
         history = response.text().to_owned();
         history = history.drain(preamble_len..).collect();
-        history = history.trim_start().to_owned();
+        history = history.trim().to_owned();
         // Clear out any "output" sections from history, to save up space in our LLM context
         // major hack:
         history = history
@@ -86,6 +86,7 @@ fn main() {
             .filter(|l| !l.trim_start().starts_with("[WEB_RESULT"))
             .collect::<Vec<&str>>()
             .join("\n");
+        history.push('\n');
         info!("New history:\n{history}");
     }
 }

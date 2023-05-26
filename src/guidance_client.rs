@@ -48,7 +48,7 @@ impl GuidanceClient {
             serde_json::to_string(request).expect("Failed to parse guidance request to json");
 
         info!("Sending guidance request to {url}...");
-        debug!("...Body: {body}");
+        debug!("Request: {:#?}", request);
         let json = client
             .post(url)
             .body(body)
@@ -58,9 +58,9 @@ impl GuidanceClient {
             .text()
             .expect("Expected text response");
         info!("...Got response.");
-        debug!("Response: {json}");
 
         let parsed: GuidanceResponse = serde_json::from_str(&json).unwrap();
+        debug!("Response: {:#?}", parsed);
 
         parsed
     }
@@ -78,7 +78,6 @@ impl GuidanceClient {
             .expect("Failed to parse guidance embeddings request to json");
 
         info!("Sending guidance embeddings request to {url}...");
-        debug!("...Body: {body}");
         let json = client
             .post(url)
             .body(body)

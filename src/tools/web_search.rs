@@ -10,7 +10,7 @@ use crate::model_client::{Embedding, EmbeddingsRequest, ModelClient};
 use super::Tool;
 
 const MAX_SECTION_LEN: usize = 400;
-const TOP_N_SECTIONS: usize = 4;
+const TOP_N_SECTIONS: usize = 3;
 
 pub struct WebSearch;
 
