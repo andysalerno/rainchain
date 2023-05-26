@@ -13,5 +13,6 @@
 <output>
 {{await 'output'}}
 </output>
-<response>{{gen 'response' stop='</response>'}}</response>
+<response>{{gen 'response' stop='\n</response>'}}
+</response>
 {{~/assistant}}
