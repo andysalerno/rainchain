@@ -2,7 +2,7 @@ use log::{debug, info};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Duration};
 
 use crate::model_client::{Embedding, EmbeddingsResponse, ModelClient};
 
@@ -52,6 +52,7 @@ impl GuidanceClient {
         let json = client
             .post(url)
             .body(body)
+            .timeout(Duration::from_secs(120))
             .send()
             .expect("Failed to send guidance request")
             .text()
@@ -81,6 +82,7 @@ impl GuidanceClient {
         let json = client
             .post(url)
             .body(body)
+            .timeout(Duration::from_secs(120))
             .send()
             .expect("Failed to send guidance embeddings request")
             .text()

@@ -31,7 +31,8 @@ fn main() {
         debug!("Starting up.");
     }
 
-    let guidance_client = GuidanceClient::new("http://archdesktop.local:8000");
+    // let guidance_client = GuidanceClient::new("http://archdesktop.local:8000");
+    let guidance_client = GuidanceClient::new("https://6513-34-135-217-163.ngrok-free.app");
 
     let prompt_preamble = load_prompt_text("guider_preamble.txt");
     let preamble_len = prompt_preamble.len();

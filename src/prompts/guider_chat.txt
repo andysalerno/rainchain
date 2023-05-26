@@ -1,6 +1,6 @@
 {{~preamble}}
 {{history}}
-{{~#user~}}
+{{#user~}}
 {{user_input}}
 {{~/user}}
 {{#assistant~}}
