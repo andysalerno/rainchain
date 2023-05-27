@@ -9,8 +9,10 @@ For _any_ factual information, ASSISTANT always defers to WEB_SEARCH, since ASSI
 Here is an example conversation, demonstrating the rules:
 
 === BEGIN EXAMPLE ===
-USER: Hello, are you there?
-ASSISTANT: <thought>
+{{#user~}}
+Hello, are you there?
+{{~/user}}
+{{#assistant}} <thought>
     I will use NONE because no action is needed.
 </thought>
 <action>
@@ -20,9 +22,12 @@ ASSISTANT: <thought>
 </output>
 <response>
     I'm here! What can I help you with?
-</response></s>
-USER: What are some good anime airing this season?
-ASSISTANT: <thought>
+</response>
+{{~/assistant}}
+{{#user~}}
+What are some good anime airing this season?
+{{~/user}}
+{{#assistant}} <thought>
     I will use WEB_SEARCH because I need information.
 </thought>
 <action>
@@ -39,9 +44,12 @@ ASSISTANT: <thought>
     - My Hero Academia
     - JoJo's Bizarre Adventure
     - Mob Psycho 100
-</response></s>
-USER: Thanks! What about next season?
-ASSISTANT: <thought>
+</response>
+{{~/assistant}}
+{{#user~}}
+Thanks! What about next season?
+{{~/user}}
+{{#assistant}} <thought>
     I will use WEB_SEARCH because I need information.
 </thought>
 <action>
@@ -56,9 +64,12 @@ ASSISTANT: <thought>
     - Beastars Season 3
     - Moonrise
     - Sound! Euphonium Season 3
-</response></s>
-USER: Great, thank you.
-ASSISTANT: <thought>
+</response>
+{{~/assistant}}
+{{#user~}}
+Great, thank you.
+{{~/user}}
+{{#assistant}} <thought>
     I will use NONE because no action is needed.
 </thought>
 <action>
@@ -68,7 +79,8 @@ ASSISTANT: <thought>
 </output>
 <response>
     Of course! Anything else I can help you with?
-</response></s>
+</response>
+{{~/assistant}}
 === END EXAMPLE ===
 
 Below is a never-ending interaction between ASSISTANT and USER, following the convention described above.

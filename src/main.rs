@@ -50,6 +50,10 @@ fn main() {
             user_input = user_input.trim().to_string();
         }
 
+        // Hack: we need to manually replace {{history}} first, because that value
+        // is itself templated, and guidance only performs template replacement once
+        let prompt_chat: String = prompt_chat.replace("{{preamble}}", &prompt_preamble);
+
         let request = GuidanceRequestBuilder::new(&prompt_chat)
             .with_parameter("preamble", &prompt_preamble)
             .with_parameter("history", history)
@@ -65,7 +69,12 @@ fn main() {
 
         // Now we must provide OUTPUT:
         let tool = WebSearch;
-        let output = tool.get_output(action_input, action_input, &guidance_client);
+        let output = if action == "NONE" {
+            String::new()
+        } else {
+            tool.get_output(action_input, action_input, &guidance_client)
+        };
+
         info!("Got tool output:\n{output}");
 
         // Send OUTPUT back to model and let it continue:
