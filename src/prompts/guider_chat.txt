@@ -7,7 +7,7 @@
 <thought>
     I will use {{select 'thought_action' options=valid_actions}} because {{gen 'action_reason' stop='</tho'}}</thought>
 <action>
-    {{select 'action' options=valid_actions}}({{gen 'action_input' stop=")\n"}})
+    {{select 'action' options=valid_actions}}({{gen 'action_input' pattern="([A-Za-z0-9?\s'])*" stop=")\n"}})
 </action>
 <output>
 {{await 'output'}}
