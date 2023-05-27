@@ -32,11 +32,12 @@ fn main() {
     }
 
     // let guidance_client = GuidanceClient::new("http://archdesktop.local:8000");
-    let guidance_client = GuidanceClient::new("https://notebooksa.jarvislabs.ai/VFf_4YoJ8gJEGdpQJly08ncRAEVFJx3ndc5HcZZ9YocGcmyPON0Y1MdLSduZx4dpIS/proxy/8000");
+    let guidance_client = GuidanceClient::new("https://notebooksc.jarvislabs.ai/VFf_4YoJ8gJEGdpQJly08ncRAEVFJx3ndc5HcZZ9YocGcmyPON0Y1MdLSduZx4dpIS/proxy/8000");
 
     let prompt_preamble = load_prompt_text("guider_preamble.txt");
-    let preamble_len = prompt_preamble.len();
+    let chat_start_sep = "\nBegin!\n"; // hack
     let prompt_chat = load_prompt_text("guider_chat.txt");
+    let generate_question_prompt = load_prompt_text("generate_question.txt");
 
     let mut history = String::new();
 
@@ -86,7 +87,12 @@ fn main() {
         info!("Got response: {response:?}");
 
         history = response.text().to_owned();
-        history = history.drain(preamble_len..).collect();
+        // history = history.drain(preamble_len..).collect();
+        history = history
+            .split(chat_start_sep)
+            .nth(1)
+            .expect("could not find chat history")
+            .to_owned();
         history = history.trim().to_owned();
         // Clear out any "output" sections from history, to save up space in our LLM context
         // major hack:

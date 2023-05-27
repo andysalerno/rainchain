@@ -34,7 +34,7 @@ What are some good anime airing this season?
     WEB_SEARCH(popular anime spring 2023)
 </action>
 <output>
-    *omitted in example*
+    *search results omitted in example*
 </output>
 <response>
     There are several anime airing this season. Some of the most popular ones include:
@@ -56,7 +56,7 @@ Thanks! What about next season?
     WEB_SEARCH(popular upcoming anime)
 </action>
 <output>
-    *omitted in example*
+    *search results omitted in example*
 </output>
 <response>
     Here are some of the most anticipated anime series of Winter 2024:

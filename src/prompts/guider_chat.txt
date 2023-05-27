@@ -12,6 +12,6 @@
 <output>
 {{await 'output'}}
 </output>
-<response>{{gen 'response' stop='\n</response>'}}
+<response>{{gen 'response' temperature=1.0 stop='\n</response'}}
 </response>
 {{~/assistant}}
