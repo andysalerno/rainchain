@@ -5,13 +5,13 @@
 {{~/user}}
 {{#assistant~}}
 <thought>
-    I will use {{select 'thought_action' options=valid_actions}} because {{gen 'action_reason' stop='</tho'}}</thought>
+    I will use {{select 'thought_action' options=valid_actions}} because {{gen temperature=0.1 'action_reason' stop='</tho'}}</thought>
 <action>
-    {{select 'action' options=valid_actions}}({{gen 'action_input' pattern="([A-Za-z0-9?\s'])*" stop=")\n"}})
+    {{select 'action' options=valid_actions}}({{gen 'action_input' temperature=0.1 pattern="([A-Za-z0-9?\s'])*" stop=")\n"}})
 </action>
 <output>
 {{await 'output'}}
 </output>
-<response>{{gen 'response' temperature=1.0 stop='\n</response'}}
+<response>{{gen 'response' temperature=0.5 stop='\n</response'}}
 </response>
 {{~/assistant}}

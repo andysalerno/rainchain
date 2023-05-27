@@ -56,7 +56,7 @@ fn main() {
         let prompt_chat: String = prompt_chat.replace("{{preamble}}", &prompt_preamble);
 
         let request = GuidanceRequestBuilder::new(&prompt_chat)
-            .with_parameter("preamble", &prompt_preamble)
+            // .with_parameter("preamble", &prompt_preamble)
             .with_parameter("history", history)
             .with_parameter("user_input", user_input)
             .with_parameter_list("valid_actions", &["WEB_SEARCH", "NONE"])
