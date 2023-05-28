@@ -6,12 +6,10 @@ use std::{fs, io::Write};
 use env_logger::Env;
 use guidance_client::{GuidanceClient, GuidanceRequestBuilder};
 use log::{debug, info};
-use model_client::{ModelClient, WebsocketClient};
+use model_client::ModelClient;
 
 use crate::{
-    agent::action_thought::ActionThought,
     server::{Server, WebsocketServer},
-    session::Session,
     tools::{web_search::WebSearch, Tool},
 };
 
@@ -20,10 +18,11 @@ mod conversation;
 mod guidance_client;
 mod model_client;
 mod server;
-mod session;
+// mod session;
 mod tools;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     // Logging startup
     {
         let env = Env::default().filter_or("RUST_LOG", "rainchain=debug");
@@ -31,13 +30,13 @@ fn main() {
         debug!("Starting up.");
     }
 
+    // old_run();
+
     // let guidance_client = GuidanceClient::new("http://archdesktop.local:8000");
     let guidance_client = GuidanceClient::new("https://notebooksc.jarvislabs.ai/VFf_4YoJ8gJEGdpQJly08ncRAEVFJx3ndc5HcZZ9YocGcmyPON0Y1MdLSduZx4dpIS/proxy/8000");
 
     let prompt_preamble = load_prompt_text("guider_preamble.txt");
-    let chat_start_sep = "\nBegin!\n"; // hack
     let prompt_chat = load_prompt_text("guider_chat.txt");
-    let generate_question_prompt = load_prompt_text("generate_question.txt");
 
     let mut history = String::new();
 
@@ -71,7 +70,7 @@ fn main() {
             .build();
 
         // The first response will have THOUGHT and ACTION filled out.
-        let response = guidance_client.get_response(&request);
+        let response = guidance_client.get_response(&request).await;
         let action = response.expect_variable("action").trim();
         let action_input = response.expect_variable("action_input").trim();
         info!("Got response: {response:?}");
@@ -91,7 +90,7 @@ fn main() {
         let request = GuidanceRequestBuilder::new(ongoing_chat)
             .with_parameter("output", output)
             .build();
-        let response = guidance_client.get_response(&request);
+        let response = guidance_client.get_response(&request).await;
         info!("Got response: {response:?}");
 
         // Update history
@@ -123,29 +122,30 @@ fn main() {
     }
 }
 
-fn old_run() {
-    // // Listens for connections from browsers
-    // let server = make_server();
+// fn old_run() {
+//     // Listens for connections from browsers
+//     let server = make_server();
 
-    // let session_handler = Session::new(
-    //     || Box::new(make_client()),
-    //     || Box::new(ActionThought::new()),
-    // );
+//     let session_handler = Session::new(
+//         || Box::new(make_client()),
+//         || Box::new(ActionThought::new()),
+//     );
 
-    // debug!("Starting server.");
-    // server.run(session_handler);
-}
+//     debug!("Starting server.");
+//     server.run(session_handler);
+// }
 
 fn make_server() -> impl Server {
     WebsocketServer {}
 }
 
-fn make_client() -> impl ModelClient + Sync + Send {
-    WebsocketClient::connect("ws://archdesktop.local:5005/api/v1/stream")
-    // WebsocketClient::connect(
-    //     "wss://resulted-dimension-words-sapphire.trycloudflare.com/api/v1/stream",
-    // )
-}
+// fn make_client() -> impl ModelClient + Sync + Send {
+//     todo!()
+//     // WebsocketClient::connect("ws://archdesktop.local:5005/api/v1/stream")
+//     // WebsocketClient::connect(
+//     //     "wss://resulted-dimension-words-sapphire.trycloudflare.com/api/v1/stream",
+//     // )
+// }
 
 fn load_prompt_text(prompt_name: &str) -> String {
     let path = format!("src/prompts/{prompt_name}");

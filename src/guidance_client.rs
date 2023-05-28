@@ -1,5 +1,10 @@
+// use es::Client;
+// use eventsource_client as es;
+use futures::TryStreamExt;
+use futures::{stream::StreamExt, Stream};
 use log::{debug, info};
-use reqwest::Url;
+use reqwest::{Client, Url};
+use reqwest_eventsource::{Event, EventSource, RequestBuilderExt};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{collections::HashMap, time::Duration};
@@ -39,30 +44,81 @@ impl GuidanceClient {
         Self { uri: uri.into() }
     }
 
-    pub fn get_response(&self, request: &GuidanceRequest) -> GuidanceResponse {
-        let client = reqwest::blocking::Client::new();
+    pub async fn get_response(&self, request: &GuidanceRequest) -> GuidanceResponse {
+        // let client = reqwest::blocking::Client::new();
+
+        let client = reqwest::Client::new();
 
         let url = Url::parse(&format!("{}/chat", self.uri)).expect("Failed to parse guidance url");
 
         let body =
             serde_json::to_string(request).expect("Failed to parse guidance request to json");
 
-        info!("Sending guidance request to {url}...");
-        debug!("Request: {:#?}", request);
-        let json = client
-            .post(url)
-            .body(body)
-            .timeout(Duration::from_secs(120))
-            .send()
-            .expect("Failed to send guidance request")
-            .text()
-            .expect("Expected text response");
-        info!("...Got response.");
+        let mut stream = client.post(url).body(body).eventsource().unwrap();
 
-        let parsed: GuidanceResponse = serde_json::from_str(&json).unwrap();
-        debug!("Response: {:#?}", parsed);
+        // let stream_client = es::ClientBuilder::for_url(url.as_str())
+        //     .unwrap()
+        //     .method("POST".to_owned())
+        //     .body(body.clone())
+        //     .build();
 
-        parsed
+        // stream_client.stream();
+
+        let mut responses = HashMap::<String, String>::new();
+
+        while let Some(event) = stream.next().await {
+            match event {
+                Ok(event) => match event {
+                    Event::Open => info!("got open event"),
+                    Event::Message(m) => {
+                        let response: GuidanceResponse = serde_json::from_str(&m.data)
+                            .expect("response was not in the expected format");
+                        info!("got message: {response:?}");
+
+                        if let Some(current) = responses.get_mut("text") {
+                            current.push_str(response.text());
+                        } else {
+                            responses.insert("text".to_owned(), response.text().to_owned());
+                        }
+
+                        for (k, v) in response.variables {
+                            if let Some(current) = responses.get_mut(&k) {
+                                current.push_str(&v);
+                            } else {
+                                responses.insert(k, v);
+                            }
+                        }
+                    }
+                },
+                _ => break,
+            }
+        }
+
+        info!("done. final:\n{:#?}", responses);
+
+        // while let s = stream_client.stream().try_next().await {
+        //     info!("Got s: {s:?}");
+        // }
+
+        todo!()
+
+        // info!("Sending guidance request to {url}...");
+        // debug!("Request: {:#?}", request);
+        // let json = client
+        //     .post(url)
+        //     .body(body)
+        //     .timeout(Duration::from_secs(120))
+        //     .send()
+        //     .expect("Failed to send guidance request")
+        //     .text()
+        //     .expect("Expected text response");
+        // info!("...Got response.");
+        // debug!("Response:\n{json}");
+
+        // let parsed: GuidanceResponse = serde_json::from_str(&json).unwrap();
+        // debug!("Response: {:#?}", parsed);
+
+        // parsed
     }
 
     pub fn get_embeddings(
@@ -178,14 +234,6 @@ impl GuidanceRequestBuilder {
 }
 
 impl ModelClient for GuidanceClient {
-    fn receive(&mut self) -> crate::model_client::ServerResponse {
-        todo!("hack - this will never be implemented")
-    }
-
-    fn send(&mut self, message: crate::model_client::ClientRequest) {
-        todo!("hack - this will never be implemented")
-    }
-
     fn request_embeddings(
         &self,
         request: &crate::model_client::EmbeddingsRequest,
