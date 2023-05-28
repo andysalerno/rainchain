@@ -41,6 +41,8 @@ fn main() {
 
     let mut history = String::new();
 
+    let mut first_user_input: Option<String> = None;
+
     loop {
         // Get user's input:
         let mut user_input = String::new();
@@ -50,6 +52,12 @@ fn main() {
             std::io::stdin().read_line(&mut user_input).unwrap();
             user_input = user_input.trim().to_string();
         }
+
+        if first_user_input.is_none() {
+            first_user_input = Some(user_input.clone());
+        }
+
+        let first_user_input = first_user_input.as_ref().unwrap();
 
         // Hack: we need to manually replace {{history}} first, because that value
         // is itself templated, and guidance only performs template replacement once
@@ -86,23 +94,32 @@ fn main() {
         let response = guidance_client.get_response(&request);
         info!("Got response: {response:?}");
 
-        history = response.text().to_owned();
-        // history = history.drain(preamble_len..).collect();
-        history = history
-            .split(chat_start_sep)
-            .nth(1)
-            .expect("could not find chat history")
-            .to_owned();
-        history = history.trim().to_owned();
-        // Clear out any "output" sections from history, to save up space in our LLM context
-        // major hack:
-        history = history
-            .lines()
-            .filter(|l| !l.trim_start().starts_with("[WEB_RESULT"))
-            .collect::<Vec<&str>>()
-            .join("\n");
-        history.push('\n');
-        info!("New history:\n{history}");
+        // Update history
+        {
+            history = response.text().to_owned();
+
+            let first_user_input_pos = history
+                .find(first_user_input)
+                .expect("expected to see the user's first input in the history");
+
+            let preceding_newline_pos = history[0..first_user_input_pos]
+                .rfind('\n')
+                .expect("expected to find a newline before the user's message");
+
+            history = history.split_off(preceding_newline_pos);
+
+            history = history.trim().to_owned();
+
+            // Clear out any "output" sections from history, to save up space in our LLM context
+            // major hack:
+            history = history
+                .lines()
+                .filter(|l| !l.trim_start().starts_with("[WEB_RESULT"))
+                .collect::<Vec<&str>>()
+                .join("\n");
+            history.push('\n');
+            info!("New history:\n{history}");
+        }
     }
 }
 
