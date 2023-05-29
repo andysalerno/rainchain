@@ -158,14 +158,6 @@ where
             let ai_response = model_response.expect_variable("response");
             info!("ai response:\n{ai_response}");
 
-            // Send the response to the client.
-            {
-                let msg_to_client =
-                    MessageToClient::new(ai_response.trim().to_owned(), String::new(), 0);
-
-                channel.send(msg_to_client);
-            }
-
             // Update history
             {
                 history = response.text().to_owned();
