@@ -1,7 +1,9 @@
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
+#[async_trait]
 pub trait ModelClient {
-    fn request_embeddings(&self, request: &EmbeddingsRequest) -> EmbeddingsResponse;
+    async fn request_embeddings(&self, request: &EmbeddingsRequest) -> EmbeddingsResponse;
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

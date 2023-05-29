@@ -1,10 +1,18 @@
+use async_trait::async_trait;
+
 use crate::model_client::ModelClient;
 
 pub mod noop;
 pub mod web_search;
 
+#[async_trait]
 pub trait Tool {
-    fn get_output(&self, input: &str, user_message: &str, model_client: &dyn ModelClient)
-        -> String;
+    async fn get_output(
+        &self,
+        input: &str,
+        user_message: &str,
+        model_client: &(dyn ModelClient + Send + Sync),
+    ) -> String;
+
     fn name(&self) -> &str;
 }

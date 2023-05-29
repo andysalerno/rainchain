@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 // use es::Client;
 // use eventsource_client as es;
 use futures::TryStreamExt;
@@ -17,7 +18,7 @@ pub struct GuidanceRequest {
     parameters: HashMap<String, serde_json::Value>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct GuidanceResponse {
     text: String,
     variables: HashMap<String, String>,
@@ -32,6 +33,12 @@ impl GuidanceResponse {
 
     pub fn text(&self) -> &str {
         &self.text
+    }
+
+    pub fn new() -> Self {
+        GuidanceResponse {
+            ..Default::default()
+        }
     }
 }
 
@@ -64,7 +71,8 @@ impl GuidanceClient {
 
         // stream_client.stream();
 
-        let mut responses = HashMap::<String, String>::new();
+        // let mut responses = HashMap::<String, String>::new();
+        let mut final_response = GuidanceResponse::new();
 
         while let Some(event) = stream.next().await {
             match event {
@@ -75,17 +83,13 @@ impl GuidanceClient {
                             .expect("response was not in the expected format");
                         info!("got message: {response:?}");
 
-                        if let Some(current) = responses.get_mut("text") {
-                            current.push_str(response.text());
-                        } else {
-                            responses.insert("text".to_owned(), response.text().to_owned());
-                        }
+                        final_response.text.push_str(response.text());
 
                         for (k, v) in response.variables {
-                            if let Some(current) = responses.get_mut(&k) {
+                            if let Some(current) = final_response.variables.get_mut(&k) {
                                 current.push_str(&v);
                             } else {
-                                responses.insert(k, v);
+                                final_response.variables.insert(k, v);
                             }
                         }
                     }
@@ -94,13 +98,13 @@ impl GuidanceClient {
             }
         }
 
-        info!("done. final:\n{:#?}", responses);
+        info!("done. final:\n{:#?}", final_response);
+
+        return final_response;
 
         // while let s = stream_client.stream().try_next().await {
         //     info!("Got s: {s:?}");
         // }
-
-        todo!()
 
         // info!("Sending guidance request to {url}...");
         // debug!("Request: {:#?}", request);
@@ -121,11 +125,11 @@ impl GuidanceClient {
         // parsed
     }
 
-    pub fn get_embeddings(
+    pub async fn get_embeddings(
         &self,
         request: &GuidanceEmbeddingsRequest,
     ) -> GuidanceEmbeddingsResponse {
-        let client = reqwest::blocking::Client::new();
+        let client = reqwest::Client::new();
 
         let url = Url::parse(&format!("{}/embeddings", self.uri))
             .expect("Failed to parse guidance embeddings url");
@@ -139,8 +143,10 @@ impl GuidanceClient {
             .body(body)
             .timeout(Duration::from_secs(120))
             .send()
+            .await
             .expect("Failed to send guidance embeddings request")
             .text()
+            .await
             .expect("Expected text response");
         info!("...Got response.");
 
@@ -233,8 +239,9 @@ impl GuidanceRequestBuilder {
     }
 }
 
+#[async_trait]
 impl ModelClient for GuidanceClient {
-    fn request_embeddings(
+    async fn request_embeddings(
         &self,
         request: &crate::model_client::EmbeddingsRequest,
     ) -> crate::model_client::EmbeddingsResponse {
@@ -244,7 +251,7 @@ impl ModelClient for GuidanceClient {
             mapped_request = mapped_request.add_input(r);
         }
 
-        let response = self.get_embeddings(&mapped_request.build());
+        let response = self.get_embeddings(&mapped_request.build()).await;
 
         EmbeddingsResponse {
             object: response.object,

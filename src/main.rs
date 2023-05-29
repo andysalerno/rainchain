@@ -81,6 +81,7 @@ async fn main() {
             String::new()
         } else {
             tool.get_output(action_input, action_input, &guidance_client)
+                .await
         };
 
         info!("Got tool output:\n{output}");

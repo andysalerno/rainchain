@@ -1,8 +1,9 @@
 use std::{error::Error, time::Duration, vec};
 
+use async_trait::async_trait;
+use futures::future::{self, try_join_all};
 use log::{debug, trace};
 use ordered_float::OrderedFloat;
-
 use serde::Deserialize;
 
 use crate::model_client::{Embedding, EmbeddingsRequest, ModelClient};
@@ -14,27 +15,30 @@ const TOP_N_SECTIONS: usize = 3;
 
 pub struct WebSearch;
 
+#[async_trait]
 impl Tool for WebSearch {
-    fn get_output(
+    async fn get_output(
         &self,
         input: &str,
         user_message: &str,
-        model_client: &dyn ModelClient,
+        model_client: &(dyn ModelClient + Send + Sync),
     ) -> String {
-        let top_links = search(input);
+        let top_links = search(input).await;
 
-        let sections: Vec<_> = top_links
+        let scrape_futures = top_links.into_iter().take(6).map(scrape);
+
+        let sections: Vec<_> = future::join_all(scrape_futures)
+            .await
             .into_iter()
-            .take(6)
-            .map(|url| scrape(&url))
             .filter_map(Result::ok)
             .filter(|text| text.len() > 50)
             .flat_map(|text| split_text_into_sections(text, MAX_SECTION_LEN))
             .collect();
 
         debug!("Getting embeddings...");
-        let embeddings_result =
-            model_client.request_embeddings(&EmbeddingsRequest::new(sections.clone()));
+        let embeddings_result = model_client
+            .request_embeddings(&EmbeddingsRequest::new(sections.clone()))
+            .await;
 
         let mut corpus_embeddings = embeddings_result.take_embeddings();
         corpus_embeddings.sort_unstable_by_key(Embedding::index);
@@ -47,9 +51,9 @@ impl Tool for WebSearch {
         let user_embed_str: String = input.into();
 
         let user_input_embedding = {
-            let response =
-                // model_client.request_embeddings(&EmbeddingsRequest::new(vec![user_message.into()]));
-                model_client.request_embeddings(&EmbeddingsRequest::new(vec![user_embed_str.clone()]));
+            let response = model_client
+                .request_embeddings(&EmbeddingsRequest::new(vec![user_embed_str.clone()]))
+                .await;
             let embeddings = response.take_embeddings();
             embeddings.into_iter().next().expect("Expected embeddings")
         };
@@ -118,19 +122,21 @@ fn cosine_similarity(vec1: &[f32], vec2: &[f32]) -> f32 {
     dot_product / (magnitude_vec1 * magnitude_vec2)
 }
 
-fn search(query: &str) -> Vec<String> {
+async fn search(query: &str) -> Vec<String> {
     debug!("Searching Google for '{query}'");
 
     let (api_key, cx) = get_api_key_cx();
-    let client = reqwest::blocking::Client::new();
+    let client = reqwest::Client::new();
 
     let response = client
         .get("https://www.googleapis.com/customsearch/v1")
         .query(&[("key", api_key.as_str()), ("cx", cx.as_str()), ("q", query)])
         .timeout(Duration::from_millis(5000))
         .send()
+        .await
         .unwrap()
         .json::<Response>()
+        .await
         .unwrap();
 
     let len = response.items.len();
@@ -139,14 +145,17 @@ fn search(query: &str) -> Vec<String> {
     response.items.into_iter().map(|i| i.link).collect()
 }
 
-fn scrape(url: &str) -> Result<String, Box<dyn Error>> {
+async fn scrape(url: impl AsRef<str>) -> Result<String, Box<dyn Error + Send + Sync>> {
+    let url = url.as_ref();
+
     debug!("Scraping: {url}...");
-    let client = reqwest::blocking::ClientBuilder::new()
+
+    let client = reqwest::ClientBuilder::new()
         .timeout(Duration::from_millis(500))
         .build()?;
 
-    let response = client.get(url).send()?;
-    let s = response.text()?;
+    let response = client.get(url).send().await?;
+    let s = response.text().await?;
     let mut readability = readable_readability::Readability::new();
     let (node_ref, _metadata) = readability
         .strip_unlikelys(true)
