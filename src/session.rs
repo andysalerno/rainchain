@@ -115,12 +115,13 @@ where
             };
 
             // Send OUTPUT back to model and let it continue:
-            let model_response = {
+            let response = {
                 let ongoing_chat = response.text();
                 let request = GuidanceRequestBuilder::new(ongoing_chat)
                     .with_parameter("output", tool_output)
                     .build();
 
+                let mut complete_response = GuidanceResponse::new();
                 let mut response_stream = model_client.request_guidance_stream(&request);
                 let mut stream_count = 0;
                 while let Ok(Some(event)) = response_stream.try_next().await {
@@ -141,14 +142,14 @@ where
                                     stream_count += 1;
                                 }
                             }
+
+                            complete_response.apply_delta(delta);
                         }
                     }
                 }
 
-                let response = model_client.request_guidance(&request).await;
-                response
+                complete_response
             };
-            let ai_response = model_response.expect_variable("response");
 
             // Update history
             {
