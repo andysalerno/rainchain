@@ -1,11 +1,9 @@
 #![deny(clippy::pedantic)]
 #![allow(clippy::module_name_repetitions)]
 
-
-
 use env_logger::Env;
 use guidance_client::GuidanceClient;
-use log::{debug};
+use log::debug;
 use model_client::ModelClient;
 
 use crate::{

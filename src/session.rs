@@ -1,12 +1,14 @@
 use crate::{
-    model_client::{GuidanceRequestBuilder, ModelClient},
+    model_client::{GuidanceRequestBuilder, GuidanceResponse, ModelClient},
     server::{MessageChannel, SessionHandler},
     tools::{web_search::WebSearch, Tool},
 };
 use async_trait::async_trait;
+use futures_util::TryStreamExt;
 use log::{debug, info};
+use reqwest_eventsource::Event;
 use serde::{Deserialize, Serialize};
-use std::{fs};
+use std::fs;
 
 fn load_prompt_text(prompt_name: &str) -> String {
     let path = format!("src/prompts/{prompt_name}");
@@ -45,7 +47,9 @@ impl MessageFromClient {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct MessageToClient {
-    message: String,
+    event: String,
+    message_num: usize,
+    text: String,
 }
 
 #[async_trait]
@@ -87,30 +91,73 @@ where
                 .with_parameter_list("valid_actions", &["WEB_SEARCH", "NONE"])
                 .build();
 
+            // Get action / thought response:
+            let response = {
+                let mut stream = model_client.request_guidance_stream(&request);
+
+                let mut response = GuidanceResponse::new();
+                while let Ok(Some(event)) = stream.try_next().await {
+                    match event {
+                        Event::Open => info!("got open event"),
+                        Event::Message(m) => {
+                            let delta: GuidanceResponse = serde_json::from_str(&m.data)
+                                .expect("response was not in the expected format");
+
+                            response.apply_delta(delta);
+                        }
+                    }
+                }
+
+                response
+            };
+
             // The first response will have THOUGHT and ACTION filled out.
-            let response = model_client.request_guidance(&request).await;
+            // let response = model_client.request_guidance(&request).await;
             let action = response.expect_variable("action").trim();
             let action_input = response.expect_variable("action_input").trim();
             info!("Got response: {response:?}");
 
             // Now we must provide OUTPUT:
-            let tool = WebSearch;
-            let output = if action == "NONE" {
-                String::new()
-            } else {
-                tool.get_output(action_input, action_input, model_client.as_ref())
-                    .await
+            let tool_output = {
+                let tool = WebSearch;
+
+                if action == "NONE" {
+                    String::new()
+                } else {
+                    tool.get_output(action_input, action_input, model_client.as_ref())
+                        .await
+                }
             };
 
-            info!("Got tool output:\n{output}");
+            info!("Got tool output:\n{tool_output}");
 
             // Send OUTPUT back to model and let it continue:
-            let ongoing_chat = response.text();
-            let request = GuidanceRequestBuilder::new(ongoing_chat)
-                .with_parameter("output", output)
-                .build();
-            let response = model_client.request_guidance(&request).await;
-            info!("Got response: {response:?}");
+            let model_response = {
+                let ongoing_chat = response.text();
+                info!("ongoing chat:\n{:#?}", ongoing_chat);
+                let request = GuidanceRequestBuilder::new(ongoing_chat)
+                    .with_parameter("output", tool_output)
+                    .build();
+                let response = model_client.request_guidance(&request).await;
+                info!("Got response: {response:?}");
+                response
+            };
+            let ai_response = model_response.expect_variable("response");
+            info!("ai response:\n{ai_response}");
+
+            // Send the response to the client.
+            {
+                let msg_to_client = MessageToClient {
+                    text: ai_response.trim().to_owned(),
+                    event: String::new(),
+                    message_num: 0,
+                };
+
+                let json =
+                    serde_json::to_string(&msg_to_client).expect("Could not serialize to json");
+
+                channel.send(json);
+            }
 
             // Update history
             {

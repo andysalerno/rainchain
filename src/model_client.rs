@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use async_trait::async_trait;
+use reqwest_eventsource::EventSource;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -8,6 +9,7 @@ use serde_json::json;
 pub trait ModelClient {
     async fn request_embeddings(&self, request: &EmbeddingsRequest) -> EmbeddingsResponse;
     async fn request_guidance(&self, request: &GuidanceRequest) -> GuidanceResponse;
+    fn request_guidance_stream(&self, request: &GuidanceRequest) -> EventSource;
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -79,6 +81,18 @@ impl GuidanceResponse {
 
     pub fn text(&self) -> &str {
         &self.text
+    }
+
+    pub fn apply_delta(&mut self, delta: GuidanceResponse) {
+        self.text.push_str(delta.text());
+
+        for (k, v) in delta.variables {
+            if let Some(current) = self.variables.get_mut(&k) {
+                current.push_str(&v);
+            } else {
+                self.variables.insert(k, v);
+            }
+        }
     }
 
     pub fn new() -> Self {

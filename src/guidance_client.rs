@@ -3,7 +3,7 @@ use futures::stream::StreamExt;
 use futures_util::Stream;
 use log::info;
 use reqwest::Url;
-use reqwest_eventsource::{Error, Event, RequestBuilderExt};
+use reqwest_eventsource::{Error, Event, EventSource, RequestBuilderExt};
 
 use std::time::Duration;
 
@@ -24,7 +24,8 @@ impl GuidanceClient {
     pub fn get_response_stream(
         &self,
         request: &GuidanceRequest,
-    ) -> impl Stream<Item = Result<Event, Error>> {
+        //  ) -> impl Stream<Item = Result<Event, Error>> {
+    ) -> EventSource {
         let client = reqwest::Client::new();
 
         let url = Url::parse(&format!("{}/chat", self.uri)).expect("Failed to parse guidance url");
@@ -69,10 +70,7 @@ impl GuidanceClient {
         final_response
     }
 
-    pub async fn get_embeddings(
-        &self,
-        request: &GuidanceEmbeddingsRequest,
-    ) -> GuidanceEmbeddingsResponse {
+    pub async fn get_embeddings(&self, request: &GuidanceEmbeddingsRequest) -> EmbeddingsResponse {
         let client = reqwest::Client::new();
 
         let url = Url::parse(&format!("{}/embeddings", self.uri))
@@ -94,7 +92,7 @@ impl GuidanceClient {
             .expect("Expected text response");
         info!("...Got response.");
 
-        let parsed: GuidanceEmbeddingsResponse = serde_json::from_str(&json).unwrap();
+        let parsed: EmbeddingsResponse = serde_json::from_str(&json).unwrap();
 
         parsed
     }
@@ -112,16 +110,14 @@ impl ModelClient for GuidanceClient {
             mapped_request = mapped_request.add_input(r);
         }
 
-        let response = self.get_embeddings(&mapped_request.build()).await;
-
-        EmbeddingsResponse {
-            object: response.object,
-            data: response.data,
-            model: response.model,
-        }
+        self.get_embeddings(&mapped_request.build()).await
     }
 
     async fn request_guidance(&self, request: &GuidanceRequest) -> GuidanceResponse {
         self.get_response(request).await
+    }
+
+    fn request_guidance_stream(&self, request: &GuidanceRequest) -> EventSource {
+        self.get_response_stream(request)
     }
 }
