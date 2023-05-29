@@ -105,6 +105,11 @@ where
                 if action == "NONE" {
                     String::new()
                 } else {
+                    channel.send(MessageToClient::new(
+                        String::new(),
+                        format!("Searching: {action_input}"),
+                        0,
+                    ));
                     tool.get_output(action_input, action_input, model_client.as_ref())
                         .await
                 }
@@ -134,8 +139,8 @@ where
                             if let Some(response_delta) = delta.variable("response") {
                                 if !response_delta.is_empty() {
                                     let to_client = MessageToClient::new(
-                                        response_delta.to_owned(),
                                         String::new(),
+                                        response_delta.to_owned(),
                                         stream_count,
                                     );
                                     channel.send(to_client);
