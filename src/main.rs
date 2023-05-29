@@ -13,8 +13,6 @@ use crate::{
     tools::{web_search::WebSearch, Tool},
 };
 
-mod agent;
-mod conversation;
 mod guidance_client;
 mod model_client;
 mod server;

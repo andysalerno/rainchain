@@ -1,6 +1,4 @@
 use crate::{
-    agent::{Agent, NextStep},
-    conversation::Conversation,
     model_client::{GuidanceRequestBuilder, ModelClient},
     server::{MessageChannel, SessionHandler},
     tools::{web_search::WebSearch, Tool},
@@ -18,25 +16,19 @@ fn load_prompt_text(prompt_name: &str) -> String {
 
 /// A `Session` handles the `Conversation` from beginning to end.
 #[derive(Clone)]
-pub struct Session<TClient, TAgent>
+pub struct Session<TClient>
 where
     TClient: FnOnce() -> Box<dyn ModelClient + Send + Sync> + Send,
-    TAgent: FnOnce() -> Box<dyn Agent> + Send,
 {
     make_client: TClient,
-    make_agent: TAgent,
 }
 
-impl<TClient, TAgent> Session<TClient, TAgent>
+impl<TClient> Session<TClient>
 where
     TClient: FnOnce() -> Box<dyn ModelClient + Send + Sync> + Send,
-    TAgent: FnOnce() -> Box<dyn Agent> + Send,
 {
-    pub fn new(make_client: TClient, make_agent: TAgent) -> Self {
-        Self {
-            make_client,
-            make_agent,
-        }
+    pub fn new(make_client: TClient) -> Self {
+        Self { make_client }
     }
 }
 
@@ -45,23 +37,25 @@ struct MessageFromClient {
     message: String,
 }
 
+impl MessageFromClient {
+    fn message(&self) -> &str {
+        &self.message
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct MessageToClient {
     message: String,
 }
 
 #[async_trait]
-impl<TClient, TAgent> SessionHandler for Session<TClient, TAgent>
+impl<TClient> SessionHandler for Session<TClient>
 where
     TClient: FnOnce() -> Box<dyn ModelClient + Send + Sync> + Send,
-    TAgent: FnOnce() -> Box<dyn Agent> + Send,
 {
-    async fn handle_session(self, _channel: impl MessageChannel + Send + Sync) {
+    async fn handle_session(self, mut channel: impl MessageChannel + Send + Sync) {
         let model_client = (self.make_client)();
 
-        // let agent = (self.make_agent)();
-
-        let full_history = String::new();
         let prompt_preamble = load_prompt_text("guider_preamble.txt");
         let prompt_chat = load_prompt_text("guider_chat.txt");
 
@@ -71,13 +65,11 @@ where
 
         loop {
             // Get user's input:
-            let mut user_input = String::new();
-            {
-                print!("Type your message: ");
-                std::io::stdout().flush().unwrap();
-                std::io::stdin().read_line(&mut user_input).unwrap();
-                user_input = user_input.trim().to_string();
-            }
+            let user_input: String = {
+                let message = channel.receive();
+                let message: MessageFromClient = serde_json::from_str(&message).unwrap();
+                message.message().to_owned()
+            };
 
             if first_user_input.is_none() {
                 first_user_input = Some(user_input.clone());
@@ -128,6 +120,7 @@ where
                     .find(first_user_input)
                     .expect("expected to see the user's first input in the history");
 
+                // This hack needs to be replaced:
                 let preceding_newline_pos = history[0..first_user_input_pos]
                     .rfind('\n')
                     .expect("expected to find a newline before the user's message");
@@ -146,20 +139,6 @@ where
                 history.push('\n');
                 info!("New history:\n{history}");
             }
-        }
-
-        // Outermost conversation loop:
-        // 1. get message from user
-        // 2. send message to model as prompt, requesting a response
-        // 3. start receiving the response until the stream has ended.
-        // 4. hand the response to the agent, and allow it to take the next step.
-        // 5. Repeat.
-        loop {
-            // 1. Get a message from a user.
-            let message: MessageFromClient = {
-                let message = channel.receive();
-                serde_json::from_str(&message).unwrap()
-            };
         }
     }
 }
