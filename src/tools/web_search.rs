@@ -20,7 +20,7 @@ impl Tool for WebSearch {
     async fn get_output(
         &self,
         input: &str,
-        user_message: &str,
+        _user_message: &str,
         model_client: &(dyn ModelClient + Send + Sync),
     ) -> String {
         let top_links = search(input).await;

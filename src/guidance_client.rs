@@ -1,14 +1,14 @@
 use async_trait::async_trait;
 use futures::stream::StreamExt;
-use log::{debug, info};
-use reqwest::{Client, Url};
-use reqwest_eventsource::{Event, EventSource, RequestBuilderExt};
-use serde::{Deserialize, Serialize};
-use serde_json::json;
-use std::{collections::HashMap, time::Duration};
+use log::{info};
+use reqwest::{Url};
+use reqwest_eventsource::{Event, RequestBuilderExt};
+
+
+use std::{time::Duration};
 
 use crate::model_client::{
-    Embedding, EmbeddingsResponse, GuidanceEmbeddingsRequest, GuidanceEmbeddingsRequestBuilder,
+    EmbeddingsResponse, GuidanceEmbeddingsRequest, GuidanceEmbeddingsRequestBuilder,
     GuidanceEmbeddingsResponse, GuidanceRequest, GuidanceResponse, ModelClient,
 };
 
@@ -59,7 +59,7 @@ impl GuidanceClient {
 
         info!("done. final:\n{:#?}", final_response);
 
-        return final_response;
+        final_response
     }
 
     pub async fn get_embeddings(
