@@ -7,6 +7,7 @@ use serde_json::json;
 #[async_trait]
 pub trait ModelClient {
     async fn request_embeddings(&self, request: &EmbeddingsRequest) -> EmbeddingsResponse;
+    async fn request_guidance(&self, request: &GuidanceRequest) -> GuidanceResponse;
 }
 
 #[derive(Serialize, Deserialize, Debug)]

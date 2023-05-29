@@ -1,11 +1,10 @@
 use async_trait::async_trait;
 use futures::stream::StreamExt;
-use log::{info};
-use reqwest::{Url};
+use log::info;
+use reqwest::Url;
 use reqwest_eventsource::{Event, RequestBuilderExt};
 
-
-use std::{time::Duration};
+use std::time::Duration;
 
 use crate::model_client::{
     EmbeddingsResponse, GuidanceEmbeddingsRequest, GuidanceEmbeddingsRequestBuilder,
@@ -112,5 +111,9 @@ impl ModelClient for GuidanceClient {
             data: response.data,
             model: response.model,
         }
+    }
+
+    async fn request_guidance(&self, request: &GuidanceRequest) -> GuidanceResponse {
+        todo!()
     }
 }

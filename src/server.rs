@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use std::net::TcpListener;
 use std::thread::spawn;
 use tungstenite::{accept, Message, WebSocket};
@@ -8,8 +9,9 @@ pub trait Server {
         T: SessionHandler + Clone + Send + 'static;
 }
 
+#[async_trait]
 pub trait SessionHandler {
-    fn handle_session(self, channel: impl MessageChannel);
+    async fn handle_session(self, channel: impl MessageChannel + Send + Sync);
 }
 
 pub trait MessageChannel {
