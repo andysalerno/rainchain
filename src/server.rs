@@ -3,8 +3,9 @@ use std::net::TcpListener;
 use std::thread::spawn;
 use tungstenite::{accept, Message, WebSocket};
 
+#[async_trait]
 pub trait Server {
-    fn run<T>(self, session_handler: T)
+    async fn run<T>(self, session_handler: T)
     where
         T: SessionHandler + Clone + Send + 'static;
 }
@@ -36,8 +37,9 @@ where
 
 pub struct WebsocketServer {}
 
+#[async_trait]
 impl Server for WebsocketServer {
-    fn run<T>(self, session_handler: T)
+    async fn run<T>(self, session_handler: T)
     where
         T: SessionHandler + Clone + Send + 'static,
     {
@@ -48,11 +50,11 @@ impl Server for WebsocketServer {
 
             let session_handler = session_handler.clone();
 
-            spawn(move || {
+            tokio::task::spawn(async move {
                 let websocket = accept(stream.unwrap()).unwrap();
 
                 let session_handler = session_handler;
-                session_handler.handle_session(websocket);
+                session_handler.handle_session(websocket).await;
             });
         }
     }

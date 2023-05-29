@@ -1,8 +1,9 @@
 use async_trait::async_trait;
 use futures::stream::StreamExt;
+use futures_util::Stream;
 use log::info;
 use reqwest::Url;
-use reqwest_eventsource::{Event, RequestBuilderExt};
+use reqwest_eventsource::{Error, Event, RequestBuilderExt};
 
 use std::time::Duration;
 
@@ -20,7 +21,10 @@ impl GuidanceClient {
         Self { uri: uri.into() }
     }
 
-    pub async fn get_response(&self, request: &GuidanceRequest) -> GuidanceResponse {
+    pub fn get_response_stream(
+        &self,
+        request: &GuidanceRequest,
+    ) -> impl Stream<Item = Result<Event, Error>> {
         let client = reqwest::Client::new();
 
         let url = Url::parse(&format!("{}/chat", self.uri)).expect("Failed to parse guidance url");
@@ -28,7 +32,11 @@ impl GuidanceClient {
         let body =
             serde_json::to_string(request).expect("Failed to parse guidance request to json");
 
-        let mut stream = client.post(url).body(body).eventsource().unwrap();
+        client.post(url).body(body).eventsource().unwrap()
+    }
+
+    pub async fn get_response(&self, request: &GuidanceRequest) -> GuidanceResponse {
+        let mut stream = self.get_response_stream(request);
 
         let mut final_response = GuidanceResponse::new();
 
@@ -114,6 +122,6 @@ impl ModelClient for GuidanceClient {
     }
 
     async fn request_guidance(&self, request: &GuidanceRequest) -> GuidanceResponse {
-        todo!()
+        self.get_response(request).await
     }
 }
