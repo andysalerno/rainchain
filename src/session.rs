@@ -1,7 +1,7 @@
 use crate::{
     agent::{Agent, NextStep},
     conversation::Conversation,
-    model_client::{ClientRequest, ModelClient},
+    model_client::ModelClient,
     server::{MessageChannel, SessionHandler},
 };
 use log::{debug, trace};

@@ -4,11 +4,11 @@
 use std::{fs, io::Write};
 
 use env_logger::Env;
-use guidance_client::{GuidanceClient, GuidanceRequestBuilder};
+use guidance_client::GuidanceClient;
 use log::{debug, info};
-use model_client::ModelClient;
 
 use crate::{
+    model_client::GuidanceRequestBuilder,
     server::{Server, WebsocketServer},
     tools::{web_search::WebSearch, Tool},
 };
@@ -29,8 +29,6 @@ async fn main() {
         env_logger::init_from_env(env);
         debug!("Starting up.");
     }
-
-    // old_run();
 
     // let guidance_client = GuidanceClient::new("http://archdesktop.local:8000");
     let guidance_client = GuidanceClient::new("https://notebooksc.jarvislabs.ai/VFf_4YoJ8gJEGdpQJly08ncRAEVFJx3ndc5HcZZ9YocGcmyPON0Y1MdLSduZx4dpIS/proxy/8000");
@@ -63,7 +61,6 @@ async fn main() {
         let prompt_chat: String = prompt_chat.replace("{{preamble}}", &prompt_preamble);
 
         let request = GuidanceRequestBuilder::new(&prompt_chat)
-            // .with_parameter("preamble", &prompt_preamble)
             .with_parameter("history", history)
             .with_parameter("user_input", user_input)
             .with_parameter_list("valid_actions", &["WEB_SEARCH", "NONE"])

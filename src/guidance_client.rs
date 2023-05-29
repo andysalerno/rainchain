@@ -1,8 +1,5 @@
 use async_trait::async_trait;
-// use es::Client;
-// use eventsource_client as es;
-use futures::TryStreamExt;
-use futures::{stream::StreamExt, Stream};
+use futures::stream::StreamExt;
 use log::{debug, info};
 use reqwest::{Client, Url};
 use reqwest_eventsource::{Event, EventSource, RequestBuilderExt};
@@ -10,37 +7,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{collections::HashMap, time::Duration};
 
-use crate::model_client::{Embedding, EmbeddingsResponse, ModelClient};
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct GuidanceRequest {
-    template: String,
-    parameters: HashMap<String, serde_json::Value>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Default)]
-pub struct GuidanceResponse {
-    text: String,
-    variables: HashMap<String, String>,
-}
-
-impl GuidanceResponse {
-    pub fn expect_variable(&self, key: &str) -> &str {
-        self.variables
-            .get(key)
-            .expect("Expected to find the key, but did not.")
-    }
-
-    pub fn text(&self) -> &str {
-        &self.text
-    }
-
-    pub fn new() -> Self {
-        GuidanceResponse {
-            ..Default::default()
-        }
-    }
-}
+use crate::model_client::{
+    Embedding, EmbeddingsResponse, GuidanceEmbeddingsRequest, GuidanceEmbeddingsRequestBuilder,
+    GuidanceEmbeddingsResponse, GuidanceRequest, GuidanceResponse, ModelClient,
+};
 
 pub struct GuidanceClient {
     uri: String,
@@ -52,8 +22,6 @@ impl GuidanceClient {
     }
 
     pub async fn get_response(&self, request: &GuidanceRequest) -> GuidanceResponse {
-        // let client = reqwest::blocking::Client::new();
-
         let client = reqwest::Client::new();
 
         let url = Url::parse(&format!("{}/chat", self.uri)).expect("Failed to parse guidance url");
@@ -63,15 +31,6 @@ impl GuidanceClient {
 
         let mut stream = client.post(url).body(body).eventsource().unwrap();
 
-        // let stream_client = es::ClientBuilder::for_url(url.as_str())
-        //     .unwrap()
-        //     .method("POST".to_owned())
-        //     .body(body.clone())
-        //     .build();
-
-        // stream_client.stream();
-
-        // let mut responses = HashMap::<String, String>::new();
         let mut final_response = GuidanceResponse::new();
 
         while let Some(event) = stream.next().await {
@@ -101,28 +60,6 @@ impl GuidanceClient {
         info!("done. final:\n{:#?}", final_response);
 
         return final_response;
-
-        // while let s = stream_client.stream().try_next().await {
-        //     info!("Got s: {s:?}");
-        // }
-
-        // info!("Sending guidance request to {url}...");
-        // debug!("Request: {:#?}", request);
-        // let json = client
-        //     .post(url)
-        //     .body(body)
-        //     .timeout(Duration::from_secs(120))
-        //     .send()
-        //     .expect("Failed to send guidance request")
-        //     .text()
-        //     .expect("Expected text response");
-        // info!("...Got response.");
-        // debug!("Response:\n{json}");
-
-        // let parsed: GuidanceResponse = serde_json::from_str(&json).unwrap();
-        // debug!("Response: {:#?}", parsed);
-
-        // parsed
     }
 
     pub async fn get_embeddings(
@@ -153,89 +90,6 @@ impl GuidanceClient {
         let parsed: GuidanceEmbeddingsResponse = serde_json::from_str(&json).unwrap();
 
         parsed
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct GuidanceEmbeddingsRequest {
-    input: Vec<String>,
-}
-
-#[derive(Default)]
-pub struct GuidanceEmbeddingsRequestBuilder {
-    input: Vec<String>,
-}
-
-impl GuidanceEmbeddingsRequestBuilder {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn add_input(self, input: impl Into<String>) -> Self {
-        self.add_inputs([input])
-    }
-
-    pub fn add_inputs<TIter, TStr>(mut self, inputs: TIter) -> Self
-    where
-        TIter: IntoIterator<Item = TStr>,
-        TStr: Into<String>,
-    {
-        let owned: Vec<String> = inputs.into_iter().map(std::convert::Into::into).collect();
-        self.input.extend(owned);
-
-        self
-    }
-
-    pub fn build(self) -> GuidanceEmbeddingsRequest {
-        GuidanceEmbeddingsRequest { input: self.input }
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct GuidanceEmbeddingsResponse {
-    object: String,
-    data: Vec<Embedding>,
-    model: String,
-}
-
-pub struct GuidanceRequestBuilder {
-    template: String,
-    parameters: HashMap<String, serde_json::Value>,
-}
-
-impl GuidanceRequestBuilder {
-    pub fn new(template: impl Into<String>) -> Self {
-        Self {
-            template: template.into(),
-            parameters: HashMap::new(),
-        }
-    }
-
-    pub fn with_parameter(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
-        let key = key.into();
-        let value = value.into();
-
-        let value = json!(value);
-
-        self.parameters.insert(key, value);
-
-        self
-    }
-
-    pub fn with_parameter_list(mut self, key: impl Into<String>, value: &[&str]) -> Self {
-        let key = key.into();
-        let value = json!(value);
-
-        self.parameters.insert(key, value);
-
-        self
-    }
-
-    pub fn build(self) -> GuidanceRequest {
-        GuidanceRequest {
-            template: self.template,
-            parameters: self.parameters,
-        }
     }
 }
 
