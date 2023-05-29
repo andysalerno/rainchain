@@ -79,6 +79,10 @@ impl GuidanceResponse {
             .expect("Expected to find the key, but did not.")
     }
 
+    pub fn variable(&self, key: &str) -> Option<&str> {
+        self.variables.get(key).map(String::as_str)
+    }
+
     pub fn text(&self) -> &str {
         &self.text
     }

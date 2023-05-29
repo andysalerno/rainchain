@@ -1,5 +1,5 @@
 #![deny(clippy::pedantic)]
-#![allow(clippy::module_name_repetitions)]
+#![allow(clippy::module_name_repetitions, clippy::too_many_lines)]
 
 use env_logger::Env;
 use guidance_client::GuidanceClient;

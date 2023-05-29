@@ -1,13 +1,12 @@
 use crate::{
     model_client::{GuidanceRequestBuilder, GuidanceResponse, ModelClient},
-    server::{MessageChannel, SessionHandler},
+    server::{MessageChannel, MessageFromClient, MessageToClient, SessionHandler},
     tools::{web_search::WebSearch, Tool},
 };
 use async_trait::async_trait;
 use futures_util::TryStreamExt;
 use log::{debug, info};
 use reqwest_eventsource::Event;
-use serde::{Deserialize, Serialize};
 use std::fs;
 
 fn load_prompt_text(prompt_name: &str) -> String {
@@ -32,24 +31,6 @@ where
     pub fn new(make_client: TClient) -> Self {
         Self { make_client }
     }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-struct MessageFromClient {
-    message: String,
-}
-
-impl MessageFromClient {
-    fn message(&self) -> &str {
-        &self.message
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-struct MessageToClient {
-    event: String,
-    message_num: usize,
-    text: String,
 }
 
 #[async_trait]
@@ -138,6 +119,33 @@ where
                 let request = GuidanceRequestBuilder::new(ongoing_chat)
                     .with_parameter("output", tool_output)
                     .build();
+
+                let mut response_stream = model_client.request_guidance_stream(&request);
+                let mut stream_count = 0;
+                while let Ok(Some(event)) = response_stream.try_next().await {
+                    match event {
+                        Event::Open => info!("got open event"),
+                        Event::Message(m) => {
+                            let delta: GuidanceResponse = serde_json::from_str(&m.data)
+                                .expect("response was not in the expected format");
+
+                            info!("got delta:\n{delta:#?}");
+
+                            if let Some(response_delta) = delta.variable("response") {
+                                if !response_delta.is_empty() {
+                                    let to_client = MessageToClient::new(
+                                        response_delta.to_owned(),
+                                        String::new(),
+                                        stream_count,
+                                    );
+                                    channel.send(to_client);
+                                    stream_count += 1;
+                                }
+                            }
+                        }
+                    }
+                }
+
                 let response = model_client.request_guidance(&request).await;
                 info!("Got response: {response:?}");
                 response
@@ -147,16 +155,10 @@ where
 
             // Send the response to the client.
             {
-                let msg_to_client = MessageToClient {
-                    text: ai_response.trim().to_owned(),
-                    event: String::new(),
-                    message_num: 0,
-                };
+                let msg_to_client =
+                    MessageToClient::new(ai_response.trim().to_owned(), String::new(), 0);
 
-                let json =
-                    serde_json::to_string(&msg_to_client).expect("Could not serialize to json");
-
-                channel.send(json);
+                channel.send(msg_to_client);
             }
 
             // Update history
