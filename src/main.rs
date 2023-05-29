@@ -1,18 +1,16 @@
 #![deny(clippy::pedantic)]
 #![allow(clippy::module_name_repetitions)]
 
-use std::{fs, io::Write};
+
 
 use env_logger::Env;
 use guidance_client::GuidanceClient;
-use log::{debug, info};
+use log::{debug};
 use model_client::ModelClient;
 
 use crate::{
-    model_client::GuidanceRequestBuilder,
     server::{Server, WebsocketServer},
     session::Session,
-    tools::{web_search::WebSearch, Tool},
 };
 
 mod guidance_client;

@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use std::net::TcpListener;
-use std::thread::spawn;
+
 use tungstenite::{accept, Message, WebSocket};
 
 #[async_trait]

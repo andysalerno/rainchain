@@ -4,9 +4,9 @@ use crate::{
     tools::{web_search::WebSearch, Tool},
 };
 use async_trait::async_trait;
-use log::{debug, info, trace};
+use log::{debug, info};
 use serde::{Deserialize, Serialize};
-use std::{fs, io::Write};
+use std::{fs};
 
 fn load_prompt_text(prompt_name: &str) -> String {
     let path = format!("src/prompts/{prompt_name}");
