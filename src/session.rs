@@ -133,9 +133,15 @@ where
 
                             if let Some(response_delta) = delta.variable("response") {
                                 if !response_delta.is_empty() {
+                                    let response_delta = if stream_count == 0 {
+                                        response_delta.trim_start().to_owned()
+                                    } else {
+                                        response_delta.to_owned()
+                                    };
+
                                     let to_client = MessageToClient::new(
                                         String::new(),
-                                        response_delta.to_owned(),
+                                        response_delta,
                                         stream_count,
                                     );
                                     channel.send(to_client);
