@@ -5,7 +5,7 @@ use crate::{
 };
 use async_trait::async_trait;
 use futures_util::TryStreamExt;
-use log::{debug, info};
+use log::debug;
 use reqwest_eventsource::Event;
 use std::fs;
 
@@ -79,7 +79,7 @@ where
                 let mut response = GuidanceResponse::new();
                 while let Ok(Some(event)) = stream.try_next().await {
                     match event {
-                        Event::Open => info!("got open event"),
+                        Event::Open => {}
                         Event::Message(m) => {
                             let delta: GuidanceResponse = serde_json::from_str(&m.data)
                                 .expect("response was not in the expected format");
@@ -96,7 +96,6 @@ where
             // let response = model_client.request_guidance(&request).await;
             let action = response.expect_variable("action").trim();
             let action_input = response.expect_variable("action_input").trim();
-            info!("Got response: {response:?}");
 
             // Now we must provide OUTPUT:
             let tool_output = {
@@ -115,12 +114,9 @@ where
                 }
             };
 
-            info!("Got tool output:\n{tool_output}");
-
             // Send OUTPUT back to model and let it continue:
             let model_response = {
                 let ongoing_chat = response.text();
-                info!("ongoing chat:\n{:#?}", ongoing_chat);
                 let request = GuidanceRequestBuilder::new(ongoing_chat)
                     .with_parameter("output", tool_output)
                     .build();
@@ -129,12 +125,10 @@ where
                 let mut stream_count = 0;
                 while let Ok(Some(event)) = response_stream.try_next().await {
                     match event {
-                        Event::Open => info!("got open event"),
+                        Event::Open => {}
                         Event::Message(m) => {
                             let delta: GuidanceResponse = serde_json::from_str(&m.data)
                                 .expect("response was not in the expected format");
-
-                            info!("got delta:\n{delta:#?}");
 
                             if let Some(response_delta) = delta.variable("response") {
                                 if !response_delta.is_empty() {
@@ -152,11 +146,9 @@ where
                 }
 
                 let response = model_client.request_guidance(&request).await;
-                info!("Got response: {response:?}");
                 response
             };
             let ai_response = model_response.expect_variable("response");
-            info!("ai response:\n{ai_response}");
 
             // Update history
             {
@@ -183,7 +175,6 @@ where
                     .collect::<Vec<&str>>()
                     .join("\n");
                 history.push('\n');
-                info!("New history:\n{history}");
             }
         }
     }
