@@ -1,13 +1,13 @@
 use async_trait::async_trait;
-use futures_util::{SinkExt, StreamExt};
+use futures_util::{StreamExt};
 use serde::{Deserialize, Serialize};
 use tokio::{
     io::{AsyncRead, AsyncWrite},
-    net::{TcpListener, TcpStream},
+    net::{TcpListener},
 };
 use tokio_tungstenite::{
     accept_async,
-    tungstenite::{accept, Message, WebSocket},
+    tungstenite::{Message},
     WebSocketStream,
 };
 
@@ -67,7 +67,7 @@ where
     S: AsyncRead + AsyncWrite + Send + Unpin,
 {
     async fn send(&mut self, message: MessageToClient) {
-        let json = serde_json::to_string(&message).expect("Could not serialize message to json");
+        let _json = serde_json::to_string(&message).expect("Could not serialize message to json");
         futures::SinkExt::send(self, Message::Text("blah".into())).await;
     }
 

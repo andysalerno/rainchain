@@ -1,15 +1,14 @@
 use async_trait::async_trait;
 use futures::stream::StreamExt;
-use futures_util::Stream;
+
 use log::info;
 use reqwest::Url;
-use reqwest_eventsource::{Error, Event, EventSource, RequestBuilderExt};
+use reqwest_eventsource::{Event, EventSource, RequestBuilderExt};
 
 use std::time::Duration;
 
 use crate::model_client::{
-    EmbeddingsResponse, GuidanceEmbeddingsRequest, GuidanceEmbeddingsRequestBuilder,
-    GuidanceEmbeddingsResponse, GuidanceRequest, GuidanceResponse, ModelClient,
+    EmbeddingsResponse, GuidanceEmbeddingsRequest, GuidanceEmbeddingsRequestBuilder, GuidanceRequest, GuidanceResponse, ModelClient,
 };
 
 pub struct GuidanceClient {

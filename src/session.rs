@@ -5,7 +5,7 @@ use crate::{
 };
 use async_trait::async_trait;
 use futures_util::TryStreamExt;
-use log::{debug, info};
+use log::{debug};
 use reqwest_eventsource::Event;
 use std::fs;
 
