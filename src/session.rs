@@ -4,8 +4,8 @@ use crate::{
     tools::{web_search::WebSearch, Tool},
 };
 use async_trait::async_trait;
-use futures_util::TryStreamExt;
-use log::debug;
+use futures_util::{StreamExt, TryStreamExt};
+use log::{debug, info};
 use reqwest_eventsource::Event;
 use std::fs;
 
@@ -126,9 +126,9 @@ where
                 let mut complete_response = GuidanceResponse::new();
                 let mut response_stream = model_client.request_guidance_stream(&request);
                 let mut stream_count = 0;
-                while let Ok(Some(event)) = response_stream.try_next().await {
+                while let Some(Ok(event)) = response_stream.next().await {
                     match event {
-                        Event::Open => {}
+                        Event::Open => info!("stream opened"),
                         Event::Message(m) => {
                             let delta: GuidanceResponse = serde_json::from_str(&m.data)
                                 .expect("response was not in the expected format");

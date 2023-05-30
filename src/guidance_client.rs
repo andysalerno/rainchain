@@ -8,7 +8,8 @@ use reqwest_eventsource::{Event, EventSource, RequestBuilderExt};
 use std::time::Duration;
 
 use crate::model_client::{
-    EmbeddingsResponse, GuidanceEmbeddingsRequest, GuidanceEmbeddingsRequestBuilder, GuidanceRequest, GuidanceResponse, ModelClient,
+    EmbeddingsResponse, GuidanceEmbeddingsRequest, GuidanceEmbeddingsRequestBuilder,
+    GuidanceRequest, GuidanceResponse, ModelClient,
 };
 
 pub struct GuidanceClient {
@@ -37,6 +38,7 @@ impl GuidanceClient {
         let mut final_response = GuidanceResponse::new();
 
         while let Some(event) = stream.next().await {
+            info!("got some event");
             match event {
                 Ok(event) => match event {
                     Event::Open => info!("got open event"),
