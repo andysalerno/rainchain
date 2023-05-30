@@ -82,7 +82,7 @@ impl Server for WebsocketServer {
     where
         T: SessionHandler + Clone + Send + 'static,
     {
-        let listener = TcpListener::bind("127.0.0.1:5007").await.unwrap();
+        let listener = TcpListener::bind("0.0.0.0:5007").await.unwrap();
 
         while let Ok((stream, _)) = listener.accept().await {
             println!("new incoming stream.");
