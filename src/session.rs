@@ -5,7 +5,7 @@ use crate::{
 };
 use async_trait::async_trait;
 use futures_util::TryStreamExt;
-use log::{debug};
+use log::debug;
 use reqwest_eventsource::Event;
 use std::fs;
 
@@ -147,7 +147,7 @@ where
                                         stream_count,
                                     );
                                     debug!("Sending next part of stream to client: {stream_count}");
-                                    channel.send(to_client);
+                                    channel.send(to_client).await;
                                     stream_count += 1;
                                 }
                             }
