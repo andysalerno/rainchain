@@ -7,9 +7,6 @@ use tokio::{
 };
 use tokio_tungstenite::{accept_async, tungstenite::Message, WebSocketStream};
 
-// use tungstenite::{accept, Message, WebSocket};
-// use tokio_tungstenite::{accept_async, Message}
-
 #[async_trait]
 pub trait Server {
     async fn run<T>(self, session_handler: T)
