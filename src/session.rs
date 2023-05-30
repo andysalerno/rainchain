@@ -5,7 +5,7 @@ use crate::{
 };
 use async_trait::async_trait;
 use futures_util::TryStreamExt;
-use log::debug;
+use log::{debug, info};
 use reqwest_eventsource::Event;
 use std::fs;
 
@@ -51,7 +51,7 @@ where
         loop {
             // Get user's input:
             let user_input: String = {
-                let message = channel.receive();
+                let message = channel.receive().await;
                 let message: MessageFromClient = serde_json::from_str(&message).unwrap();
                 message.message().to_owned()
             };
@@ -104,11 +104,13 @@ where
                 if action == "NONE" {
                     String::new()
                 } else {
-                    channel.send(MessageToClient::new(
-                        String::new(),
-                        format!("Searching: {action_input}"),
-                        0,
-                    ));
+                    channel
+                        .send(MessageToClient::new(
+                            String::new(),
+                            format!("Searching: {action_input}"),
+                            0,
+                        ))
+                        .await;
                     tool.get_output(action_input, action_input, model_client.as_ref())
                         .await
                 }
@@ -118,7 +120,7 @@ where
             let response = {
                 let ongoing_chat = response.text();
                 let request = GuidanceRequestBuilder::new(ongoing_chat)
-                    .with_parameter("output", tool_output)
+                    .with_parameter("output", tool_output.clone())
                     .build();
 
                 let mut complete_response = GuidanceResponse::new();
@@ -144,6 +146,7 @@ where
                                         response_delta,
                                         stream_count,
                                     );
+                                    debug!("Sending next part of stream to client: {stream_count}");
                                     channel.send(to_client);
                                     stream_count += 1;
                                 }
@@ -156,6 +159,16 @@ where
 
                 complete_response
             };
+
+            if !tool_output.is_empty() {
+                channel
+                    .send(MessageToClient::new(
+                        String::from("ToolInfo"),
+                        tool_output,
+                        0,
+                    ))
+                    .await;
+            }
 
             // Update history
             {

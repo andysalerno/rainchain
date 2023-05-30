@@ -1,8 +1,18 @@
 use async_trait::async_trait;
+use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
-use std::net::TcpListener;
+use tokio::{
+    io::{AsyncRead, AsyncWrite},
+    net::{TcpListener, TcpStream},
+};
+use tokio_tungstenite::{
+    accept_async,
+    tungstenite::{accept, Message, WebSocket},
+    WebSocketStream,
+};
 
-use tungstenite::{accept, Message, WebSocket};
+// use tungstenite::{accept, Message, WebSocket};
+// use tokio_tungstenite::{accept_async, Message}
 
 #[async_trait]
 pub trait Server {
@@ -44,27 +54,32 @@ impl MessageToClient {
     }
 }
 
+#[async_trait]
 pub trait MessageChannel {
     // fn send(&mut self, message: String);
-    fn send(&mut self, message: MessageToClient);
-    fn receive(&mut self) -> String;
+    async fn send(&mut self, message: MessageToClient);
+    async fn receive(&mut self) -> String;
 }
 
-impl<Stream> MessageChannel for WebSocket<Stream>
+#[async_trait]
+impl<S> MessageChannel for WebSocketStream<S>
 where
-    Stream: std::io::Read + std::io::Write,
+    S: AsyncRead + AsyncWrite + Send + Unpin,
 {
-    fn send(&mut self, message: MessageToClient) {
+    async fn send(&mut self, message: MessageToClient) {
         let json = serde_json::to_string(&message).expect("Could not serialize message to json");
-        self.write_message(Message::Text(json)).unwrap();
+        futures::SinkExt::send(self, Message::Text("blah".into())).await;
     }
 
-    fn receive(&mut self) -> String {
-        let message = self.read_message().unwrap();
+    async fn receive(&mut self) -> String {
+        // TODO: unwrap unwrap? :(
+        let message = self.next().await.unwrap().unwrap();
 
         message.into_text().unwrap()
     }
 }
+
+struct WsChannel {}
 
 pub struct WebsocketServer {}
 
@@ -74,15 +89,15 @@ impl Server for WebsocketServer {
     where
         T: SessionHandler + Clone + Send + 'static,
     {
-        let server = TcpListener::bind("127.0.0.1:5007").unwrap();
+        let listener = TcpListener::bind("127.0.0.1:5007").await.unwrap();
 
-        for stream in server.incoming() {
+        while let Ok((stream, _)) = listener.accept().await {
             println!("new incoming stream.");
 
             let session_handler = session_handler.clone();
 
             tokio::task::spawn(async move {
-                let websocket = accept(stream.unwrap()).unwrap();
+                let websocket = accept_async(stream).await.unwrap();
 
                 let session_handler = session_handler;
                 session_handler.handle_session(websocket).await;

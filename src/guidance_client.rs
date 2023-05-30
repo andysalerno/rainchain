@@ -21,11 +21,7 @@ impl GuidanceClient {
         Self { uri: uri.into() }
     }
 
-    pub fn get_response_stream(
-        &self,
-        request: &GuidanceRequest,
-        //  ) -> impl Stream<Item = Result<Event, Error>> {
-    ) -> EventSource {
+    pub fn get_response_stream(&self, request: &GuidanceRequest) -> EventSource {
         let client = reqwest::Client::new();
 
         let url = Url::parse(&format!("{}/chat", self.uri)).expect("Failed to parse guidance url");
