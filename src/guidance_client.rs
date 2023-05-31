@@ -118,7 +118,7 @@ impl ModelClient for GuidanceClient {
     fn request_guidance_stream(
         &self,
         request: &GuidanceRequest,
-    ) -> Pin<Box<dyn Stream<Item = GuidanceResponse> + Send + Unpin>> {
+    ) -> Box<dyn Stream<Item = GuidanceResponse> + Send + Unpin> {
         let event_source = self.get_response_stream(request);
 
         let mapped = event_source
@@ -134,6 +134,6 @@ impl ModelClient for GuidanceClient {
                 delta
             });
 
-        Box::pin(mapped)
+        Box::new(mapped)
     }
 }
