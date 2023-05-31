@@ -129,7 +129,7 @@ impl ModelClient for GuidanceClient {
             })
             .map(|message| {
                 let delta: GuidanceResponse = serde_json::from_str(&message.data)
-                    .expect("response was not in the expected format");
+                    .expect("response was not in the expected GuidanceResponse format");
 
                 delta
             });

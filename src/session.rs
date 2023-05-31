@@ -52,7 +52,7 @@ where
             let mut response = String::new();
             let mut stream = agent.get_response_stream(&user_input).await;
             while let Some(t) = stream.next().await {
-                debug!("Received input from agent stream: {user_input}");
+                debug!("Received input from agent stream: {t}");
                 response.push_str(&t);
             }
             info!("Finished reading response from agent stream:\n{response}");

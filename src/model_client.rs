@@ -1,8 +1,7 @@
-use std::{collections::HashMap, pin::Pin};
+use std::collections::HashMap;
 
 use async_trait::async_trait;
 use futures_util::Stream;
-use reqwest_eventsource::EventSource;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
