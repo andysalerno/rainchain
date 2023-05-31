@@ -10,6 +10,7 @@
     {{select 'action' options=valid_actions}}({{gen 'action_input' temperature=0.1 stop=")\n"}})
 </action>
 <output>
+*I will use the following results to inform my response to the user:*
 {{await 'output'}}
 </output>
 <response>{{gen 'response' temperature=0.5 stop='\n</response'}}

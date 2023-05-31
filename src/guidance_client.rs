@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use futures::stream::StreamExt;
 
+use futures_util::Stream;
 use log::info;
 use reqwest::Url;
 use reqwest_eventsource::{Event, EventSource, RequestBuilderExt};
@@ -114,7 +115,28 @@ impl ModelClient for GuidanceClient {
         self.get_response(request).await
     }
 
-    fn request_guidance_stream(&self, request: &GuidanceRequest) -> EventSource {
-        self.get_response_stream(request)
+    fn request_guidance_stream(
+        &self,
+        request: &GuidanceRequest,
+    ) -> Box<dyn Stream<Item = String> + Send> {
+        let event_source = self.get_response_stream(request);
+
+        let mapped = event_source
+            .filter_map(|event| async move { event.ok() })
+            .filter_map(|event| async move {
+                match event {
+                    Event::Open => None,
+                    Event::Message(m) => Some(m),
+                }
+            })
+            .map(|message| message.data);
+        // .map(|message| {
+        //     let delta: GuidanceResponse = serde_json::from_str(&message.data)
+        //         .expect("response was not in the expected format");
+
+        //     delta
+        // });
+
+        Box::new(mapped)
     }
 }

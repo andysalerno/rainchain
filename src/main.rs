@@ -9,10 +9,13 @@ use log::debug;
 use model_client::ModelClient;
 
 use crate::{
+    agents::ThoughtActionAgent,
     server::{Server, WebsocketServer},
-    session::Session,
+    session::AgentSessionHandler,
 };
 
+mod agents;
+mod conversation;
 mod guidance_client;
 mod model_client;
 mod server;
@@ -35,7 +38,9 @@ async fn main() {
     // Listens for connections from browsers
     let server = make_server();
 
-    let session_handler = Session::new(move || Box::new(make_client(url)));
+    // let session_handler = Session::new(move || Box::new(make_client(url)));
+    let session_handler =
+        AgentSessionHandler::new(|| Box::new(ThoughtActionAgent::new(Box::new(make_client(url)))));
 
     debug!("Starting server.");
     server.run(session_handler).await;
@@ -47,5 +52,6 @@ fn make_server() -> impl Server {
 
 fn make_client(url: impl Into<String>) -> impl ModelClient + Sync + Send {
     let url = url.into();
+    debug!("Creating client for url: {url}");
     GuidanceClient::new(url)
 }
