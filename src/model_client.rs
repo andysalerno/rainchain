@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, pin::Pin};
 
 use async_trait::async_trait;
 use futures_util::Stream;
@@ -13,7 +13,7 @@ pub trait ModelClient {
     fn request_guidance_stream(
         &self,
         request: &GuidanceRequest,
-    ) -> Box<dyn Stream<Item = String> + Send>;
+    ) -> Pin<Box<dyn Stream<Item = GuidanceResponse> + Send + Unpin>>;
 }
 
 #[derive(Serialize, Deserialize, Debug)]

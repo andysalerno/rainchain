@@ -6,7 +6,7 @@ use log::info;
 use reqwest::Url;
 use reqwest_eventsource::{Event, EventSource, RequestBuilderExt};
 
-use std::time::Duration;
+use std::{pin::Pin, time::Duration};
 
 use crate::model_client::{
     EmbeddingsResponse, GuidanceEmbeddingsRequest, GuidanceEmbeddingsRequestBuilder,
@@ -118,25 +118,33 @@ impl ModelClient for GuidanceClient {
     fn request_guidance_stream(
         &self,
         request: &GuidanceRequest,
-    ) -> Box<dyn Stream<Item = String> + Send> {
+    ) -> Pin<Box<dyn Stream<Item = GuidanceResponse> + Send + Unpin>> {
         let event_source = self.get_response_stream(request);
 
-        let mapped = event_source
-            .filter_map(|event| async move { event.ok() })
-            .filter_map(|event| async move {
-                match event {
-                    Event::Open => None,
-                    Event::Message(m) => Some(m),
-                }
-            })
-            .map(|message| message.data);
-        // .map(|message| {
-        //     let delta: GuidanceResponse = serde_json::from_str(&message.data)
-        //         .expect("response was not in the expected format");
+        let mapped = event_source.map(|event| {
+            let Ok(e) = event else {
+                return GuidanceResponse::new();
+            };
 
-        //     delta
-        // });
+            GuidanceResponse::new()
+        });
 
-        Box::new(mapped)
+        // let mapped = event_source
+        //     .filter_map(|event| async move { event.ok() })
+        //     .filter_map(|event| async move {
+        //         match event {
+        //             Event::Open => None,
+        //             Event::Message(m) => Some(m),
+        //         }
+        //     })
+        //     // .map(|message| message.data);
+        //     .map(|message| {
+        //         let delta: GuidanceResponse = serde_json::from_str(&message.data)
+        //             .expect("response was not in the expected format");
+
+        //         delta
+        //     });
+
+        Box::pin(mapped)
     }
 }

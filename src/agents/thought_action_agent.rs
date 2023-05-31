@@ -37,6 +37,8 @@ impl Agent for ThoughtActionAgent {
         let request = GuidanceRequestBuilder::new("some text").build();
         let stream = self.model_client.request_guidance_stream(&request);
 
+        stream.map(|s| s.text().to_owned());
+
         // let as_string = stream.map(|s| s.text().to_owned());
 
         todo!()
