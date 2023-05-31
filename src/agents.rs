@@ -14,5 +14,5 @@ pub trait Agent {
         &mut self,
         message: &str,
         ui_channel: &mut (dyn MessageChannel + Send + Sync),
-    ) -> Box<dyn Stream<Item = String> + Unpin + Send>;
+    ) -> Box<dyn Stream<Item = Option<String>> + Unpin + Send>;
 }

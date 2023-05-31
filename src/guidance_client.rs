@@ -118,29 +118,35 @@ impl ModelClient for GuidanceClient {
     fn request_guidance_stream(
         &self,
         request: &GuidanceRequest,
-    ) -> Box<dyn Stream<Item = GuidanceResponse> + Send + Unpin> {
+    ) -> Box<dyn Stream<Item = Option<GuidanceResponse>> + Send + Unpin> {
         let event_source = self.get_response_stream(request);
 
         let mapped = event_source
-            .filter_map(|event| future::ready(event.ok()))
-            .filter_map(|event| match event {
-                Event::Open => future::ready(None),
-                Event::Message(m) => future::ready(Some(m)),
+            // First, filter out "Open", but preserve errors and everything else
+            .filter_map(|message| {
+                let filter = match message {
+                    Ok(Event::Open) => None,
+                    e => Some(e),
+                };
+
+                future::ready(filter)
             })
             .map(|message| {
+                let Ok(message) = message else {
+                    // At this point, Errors become None
+                    return None;
+                };
+
+                let Event::Message(message) = message else {
+                    panic!("This is never possible; we filtered out Open.");
+                };
+
                 info!("Saw data: {}", message.data);
 
-                if message.data == "[DONE]" {
-                    GuidanceResponse {
-                        text: message.data,
-                        variables: HashMap::new(),
-                    }
-                } else {
-                    let delta: GuidanceResponse = serde_json::from_str(&message.data)
-                        .expect("response was not in the expected GuidanceResponse format");
+                let delta: GuidanceResponse = serde_json::from_str(&message.data)
+                    .expect("response was not in the expected GuidanceResponse format");
 
-                    delta
-                }
+                Some(delta)
             });
 
         Box::new(mapped)

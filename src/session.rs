@@ -53,7 +53,11 @@ where
             let mut stream = agent
                 .get_response_stream(&user_input, &mut ui_channel)
                 .await;
-            while let Some(t) = stream.next().await {
+
+            // Yes, it is an Option<Option<T>>
+            // Outer layer is from the Stream, inner layer is our own data.
+            // A None from either indicates we should stop.
+            while let Some(Some(t)) = stream.next().await {
                 debug!("Received input from agent stream: {t}");
                 response.push_str(&t);
             }

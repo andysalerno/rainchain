@@ -37,7 +37,7 @@ impl Agent for ThoughtActionAgent {
         &mut self,
         message: &str,
         ui_channel: &mut (dyn MessageChannel + Send + Sync),
-    ) -> Box<dyn Stream<Item = String> + Unpin + Send> {
+    ) -> Box<dyn Stream<Item = Option<String>> + Unpin + Send> {
         let prompt_preamble = load_prompt_text("guider_preamble.txt");
         let prompt_chat = load_prompt_text("guider_chat.txt");
 
@@ -91,7 +91,7 @@ impl Agent for ThoughtActionAgent {
             let mut response_stream = self.model_client.request_guidance_stream(&request);
             let mut stream_count = 0;
             // while let Some(Ok(event)) = response_stream.next().await {
-            while let Some(delta) = response_stream.next().await {
+            while let Some(Some(delta)) = response_stream.next().await {
                 if let Some(response_delta) = delta.variable("response") {
                     if !response_delta.is_empty() {
                         let response_delta = if stream_count == 0 {
@@ -125,11 +125,17 @@ impl Agent for ThoughtActionAgent {
         }
 
         // Finally, send the tool output to the model, and let it stream to us the final response:
-        let stream = self.model_client.request_guidance_stream(&request);
+        let stream = self
+            .model_client
+            .request_guidance_stream(&request)
+            .map(|guidance_result| match guidance_result {
+                Some(g) => Some(g.text().to_owned()),
+                None => None,
+            });
 
         self.full_history.add_user_message(message);
 
-        Box::new(stream.map(|s| s.text().to_owned()))
+        Box::new(stream)
     }
 }
 

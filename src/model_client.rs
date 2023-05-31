@@ -12,7 +12,7 @@ pub trait ModelClient {
     fn request_guidance_stream(
         &self,
         request: &GuidanceRequest,
-    ) -> Box<dyn Stream<Item = GuidanceResponse> + Send + Unpin>;
+    ) -> Box<dyn Stream<Item = Option<GuidanceResponse>> + Send + Unpin>;
 }
 
 #[derive(Serialize, Deserialize, Debug)]
