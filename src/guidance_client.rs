@@ -6,7 +6,7 @@ use log::info;
 use reqwest::Url;
 use reqwest_eventsource::{Event, EventSource, RequestBuilderExt};
 
-use std::{pin::Pin, time::Duration};
+use std::{future, pin::Pin, time::Duration};
 
 use crate::model_client::{
     EmbeddingsResponse, GuidanceEmbeddingsRequest, GuidanceEmbeddingsRequestBuilder,
@@ -121,29 +121,18 @@ impl ModelClient for GuidanceClient {
     ) -> Pin<Box<dyn Stream<Item = GuidanceResponse> + Send + Unpin>> {
         let event_source = self.get_response_stream(request);
 
-        let mapped = event_source.map(|event| {
-            let Ok(e) = event else {
-                return GuidanceResponse::new();
-            };
+        let mapped = event_source
+            .filter_map(|event| future::ready(event.ok()))
+            .filter_map(|event| match event {
+                Event::Open => future::ready(None),
+                Event::Message(m) => future::ready(Some(m)),
+            })
+            .map(|message| {
+                let delta: GuidanceResponse = serde_json::from_str(&message.data)
+                    .expect("response was not in the expected format");
 
-            GuidanceResponse::new()
-        });
-
-        // let mapped = event_source
-        //     .filter_map(|event| async move { event.ok() })
-        //     .filter_map(|event| async move {
-        //         match event {
-        //             Event::Open => None,
-        //             Event::Message(m) => Some(m),
-        //         }
-        //     })
-        //     // .map(|message| message.data);
-        //     .map(|message| {
-        //         let delta: GuidanceResponse = serde_json::from_str(&message.data)
-        //             .expect("response was not in the expected format");
-
-        //         delta
-        //     });
+                delta
+            });
 
         Box::pin(mapped)
     }
