@@ -2,7 +2,7 @@ use std::fs;
 
 use async_trait::async_trait;
 use futures_util::{Stream, StreamExt};
-use log::debug;
+use log::{debug, info};
 
 use crate::{
     conversation::Conversation,
@@ -42,6 +42,7 @@ impl Agent for ThoughtActionAgent {
         // is itself templated, and guidance only performs template replacement once
         let prompt_chat: String = prompt_chat.replace("{{preamble}}", &prompt_preamble);
 
+        // First, as the ThoughtActionAgent, we get the thought/action output:
         let request = GuidanceRequestBuilder::new(prompt_chat)
             // .with_parameter("history", conversation.full_history())
             .with_parameter("history", "")
@@ -49,6 +50,13 @@ impl Agent for ThoughtActionAgent {
             .with_parameter_list("valid_actions", &["WEB_SEARCH", "NONE"])
             .build();
 
+        let output = self.model_client.request_guidance(&request).await;
+
+        info!("Got thought/action output:\n{:#?}", output);
+
+        todo!();
+
+        // Next, execute the tool, then get the response
         let stream = self.model_client.request_guidance_stream(&request);
 
         self.full_history.add_user_message(message);
