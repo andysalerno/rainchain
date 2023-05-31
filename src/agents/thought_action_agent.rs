@@ -90,7 +90,7 @@ impl Agent for ThoughtActionAgent {
             let mut complete_response = GuidanceResponse::new();
             let mut response_stream = self.model_client.request_guidance_stream(&request);
             let mut stream_count = 0;
-            // while let Some(Ok(event)) = response_stream.next().await {
+
             while let Some(Some(delta)) = response_stream.next().await {
                 if let Some(response_delta) = delta.variable("response") {
                     if !response_delta.is_empty() {
@@ -124,18 +124,10 @@ impl Agent for ThoughtActionAgent {
                 .await;
         }
 
-        // Finally, send the tool output to the model, and let it stream to us the final response:
-        let stream = self
-            .model_client
-            .request_guidance_stream(&request)
-            .map(|guidance_result| match guidance_result {
-                Some(g) => Some(g.text().to_owned()),
-                None => None,
-            });
-
         self.full_history.add_user_message(message);
 
-        Box::new(stream)
+        // We will return nothing, since  we already sent the client everything ourselves. No need to make the session do it for us.
+        Box::new(futures::stream::empty())
     }
 }
 
