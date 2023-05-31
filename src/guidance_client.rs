@@ -6,7 +6,7 @@ use log::info;
 use reqwest::Url;
 use reqwest_eventsource::{Event, EventSource, RequestBuilderExt};
 
-use std::{future, pin::Pin, time::Duration};
+use std::{collections::HashMap, future, pin::Pin, time::Duration};
 
 use crate::model_client::{
     EmbeddingsResponse, GuidanceEmbeddingsRequest, GuidanceEmbeddingsRequestBuilder,
@@ -128,10 +128,19 @@ impl ModelClient for GuidanceClient {
                 Event::Message(m) => future::ready(Some(m)),
             })
             .map(|message| {
-                let delta: GuidanceResponse = serde_json::from_str(&message.data)
-                    .expect("response was not in the expected GuidanceResponse format");
+                info!("Saw data: {}", message.data);
 
-                delta
+                if message.data == "[DONE]" {
+                    GuidanceResponse {
+                        text: message.data,
+                        variables: HashMap::new(),
+                    }
+                } else {
+                    let delta: GuidanceResponse = serde_json::from_str(&message.data)
+                        .expect("response was not in the expected GuidanceResponse format");
+
+                    delta
+                }
             });
 
         Box::new(mapped)

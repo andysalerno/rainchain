@@ -50,7 +50,9 @@ where
             // But we will stream the response piece by piece:
             info!("Requesting response from agent...");
             let mut response = String::new();
-            let mut stream = agent.get_response_stream(&user_input).await;
+            let mut stream = agent
+                .get_response_stream(&user_input, &mut ui_channel)
+                .await;
             while let Some(t) = stream.next().await {
                 debug!("Received input from agent stream: {t}");
                 response.push_str(&t);
