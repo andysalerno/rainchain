@@ -35,7 +35,7 @@ impl Tool for WebSearch {
             .flat_map(|text| split_text_into_sections(text, MAX_SECTION_LEN))
             .collect();
 
-        debug!("Getting embeddings...");
+        debug!("Getting embeddings for {} text extracts...", sections.len());
         let embeddings_result = model_client
             .request_embeddings(&EmbeddingsRequest::new(sections.clone()))
             .await;
