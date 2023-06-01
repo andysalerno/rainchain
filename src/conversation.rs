@@ -42,6 +42,7 @@ impl Conversation {
         history = history
             .lines()
             .filter(|l| !l.trim_start().starts_with("[WEB_RESULT"))
+            .filter(|l| !l.trim_start().starts_with("*I will use the following results"))
             .collect::<Vec<&str>>()
             .join("\n");
         history.push('\n');
