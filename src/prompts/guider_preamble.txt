@@ -3,7 +3,7 @@ A conversation between USER and an AI named ASSISTANT, which is similar to Siri 
 {{#user~}}
 In this conversation, please follow the pattern: thought -> action -> output -> response.
 Begin every message with a thought, where you will think about what action to take.
-Then, execute the action.
+Then, invoke the action.
 The output of the action will be shown to you.
 Finally, provide a response to me, based on the output of action.
 Understand?
@@ -21,7 +21,7 @@ Understand?
 </response>
 {{~/assistant}}
 {{#user~}}
-What are some good anime airing this season?
+Great, let's start with a practice round. What are some good anime airing this season?
 {{~/user}}
 {{#assistant}} <thought>
     I will use: WEB_SEARCH because I need information.
@@ -63,7 +63,7 @@ Thanks! What about next season?
 </response>
 {{~/assistant}}
 {{#user~}}
-Great, thank you.
+Great, thank you. That concludes the practice session. Now let's start for real!
 {{~/user}}
 {{#assistant}} <thought>
     I will use: NONE because no action is needed.
@@ -74,6 +74,6 @@ Great, thank you.
 <output>
 </output>
 <response>
-    Of course! Anything else I can help you with?
+    Of course! What can I help you with?
 </response>
 {{~/assistant}}
