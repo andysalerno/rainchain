@@ -2,7 +2,7 @@ use std::{error::Error, time::Duration, vec};
 
 use async_trait::async_trait;
 use futures::future;
-use log::{debug, trace};
+use log::{debug, trace, info};
 use ordered_float::OrderedFloat;
 use serde::Deserialize;
 
@@ -151,11 +151,14 @@ async fn scrape(url: impl AsRef<str>) -> Result<String, Box<dyn Error + Send + S
     debug!("Scraping: {url}...");
 
     let client = reqwest::ClientBuilder::new()
-        .timeout(Duration::from_millis(500))
+        .timeout(Duration::from_millis(2000))
         .build()?;
 
     let response = client.get(url).send().await?;
     let s = response.text().await?;
+
+    info!("Read text from {} length: {}", url, s.len());
+
     let mut readability = readable_readability::Readability::new();
     let (node_ref, _metadata) = readability
         .strip_unlikelys(true)
@@ -165,6 +168,8 @@ async fn scrape(url: impl AsRef<str>) -> Result<String, Box<dyn Error + Send + S
     debug!("Done.");
 
     let text_content = node_ref.text_contents();
+
+    info!("Scraped down to len: {}", text_content.len());
 
     trace!("Scraped text:\n{text_content}");
 
