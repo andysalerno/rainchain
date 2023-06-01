@@ -41,14 +41,16 @@ impl Agent for ThoughtActionAgent {
         let prompt_preamble = load_prompt_text("guider_preamble.txt");
         let prompt_chat = load_prompt_text("guider_chat.txt");
 
+        self.full_history.add_user_message(message);
+
         // Hack: we need to manually replace {{history}} first, because that value
         // is itself templated, and guidance only performs template replacement once
         let prompt_chat: String = prompt_chat.replace("{{preamble}}", &prompt_preamble);
 
         // First, as the ThoughtActionAgent, we get the thought/action output:
         let request = GuidanceRequestBuilder::new(prompt_chat)
-            // .with_parameter("history", conversation.full_history())
-            .with_parameter("history", "")
+            .with_parameter("history", self.full_history.full_history())
+            // .with_parameter("history", "")
             .with_parameter("user_input", message)
             .with_parameter_list("valid_actions", &["WEB_SEARCH", "NONE"])
             .build();
@@ -102,7 +104,7 @@ impl Agent for ThoughtActionAgent {
 
                         let to_client =
                             MessageToClient::new(String::new(), response_delta, stream_count);
-                        debug!("Sending next part of stream to client: {stream_count}");
+
                         ui_channel.send(to_client).await;
                         stream_count += 1;
                     }
@@ -124,7 +126,8 @@ impl Agent for ThoughtActionAgent {
                 .await;
         }
 
-        self.full_history.add_user_message(message);
+        info!("Updating history to:\n{}", response.text);
+        self.full_history.update(response.text);
 
         // We will return nothing, since  we already sent the client everything ourselves. No need to make the session do it for us.
         Box::new(futures::stream::empty())

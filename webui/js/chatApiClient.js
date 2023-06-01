@@ -1,6 +1,7 @@
 import { getContext } from "./script.js";
 import { addNewBotChatBubble, addNewSourceChatBubble, appendTextBotChatBubble } from "./ui.js";
-const URI = "ws://archdesktop.local:5007/api/v1/stream";
+// const URI = "ws://:5007/api/v1/stream";
+const URI = (window.location.href.split('8008')[0] + "5007/api/v1/stream").replace("https://", "wss://");
 export function sendChat(message) {
     const request = {
         message: message

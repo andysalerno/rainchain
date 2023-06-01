@@ -172,8 +172,8 @@ async fn scrape(url: impl AsRef<str>) -> Result<String, Box<dyn Error + Send + S
 }
 
 fn get_api_key_cx() -> (String, String) {
-    let api_key = std::fs::read_to_string("src/.googlekey.txt").unwrap();
-    let cx = std::fs::read_to_string("src/.googlecx.txt").unwrap();
+    let api_key = std::fs::read_to_string("src/.googlekey.txt").expect("Expected to find google key file.");
+    let cx = std::fs::read_to_string("src/.googlecx.txt").expect("Expected to find google context file.");
 
     (api_key, cx)
 }

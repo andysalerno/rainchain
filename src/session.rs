@@ -39,6 +39,7 @@ where
             info!("Waiting for input from user...");
             let user_input: String = {
                 let message = ui_channel.receive().await;
+                info!("got message:\n{message}");
                 let message: MessageFromClient = serde_json::from_str(&message).unwrap();
                 message.message().to_owned()
             };
