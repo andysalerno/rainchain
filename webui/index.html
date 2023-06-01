@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/styles.css">
+    <title>Chatbot</title>
+</head>
+
+<body>
+    <template id="message-user-template">
+        <div class="message user"></div>
+    </template>
+    <template id="message-bot-template">
+        <div class="message bot"></div>
+    </template>
+    <template id="message-sources-template">
+        <div class="message bot minimized" onclick="window.UIFns.sourceMessageClicked(this)">
+            <span class="message-content"></span>
+        </div>
+    </template>
+    <div class="chat-container">
+        <div class="chat-messages" id="chat-messages">
+            <!-- Example message bubbles -->
+            <div class="message user">User: Hi there!</div>
+            <div class="message bot">Bot: Hello! How can I help you today?</div>
+        </div>
+        <div class="input-container">
+            <input type="text" id="user-input" onkeydown="window.UIFns.enterKeyDown(event)"
+                placeholder="Type your message...">
+            <button id="send-button" onclick="window.UIFns.sendBtnClicked()">Send</button>
+        </div>
+    </div>
+    <script type="module" src="js/script.js"></script>
+    <script type="module" src="js/ui.js"></script>
+    <script type="module" src="js/chatApiClient.js"></script>
+</body>
+
+</html>
