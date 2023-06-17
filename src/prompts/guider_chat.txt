@@ -7,7 +7,7 @@
 <thought>
     I will use: {{select 'thought_action' options=valid_actions}} because {{gen temperature=0.1 'action_reason' stop='</tho'}}</thought>
 <action>
-    {{select 'action' options=valid_actions}}({{gen 'action_input' temperature=0.1}})
+    {{select 'action' options=valid_actions}}({{gen 'action_input' temperature=0.1 stop=')'}})
 </action>
 <output>
 *I will use the following results to inform my response to the user:*
