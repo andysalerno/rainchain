@@ -1,7 +1,8 @@
 import { getContext } from "./script.js";
 import { addNewBotChatBubble, addNewSourceChatBubble, appendTextBotChatBubble } from "./ui.js";
 
-const URI = "ws://archdesktop.local:5007/api/v1/stream";
+// const URI = "ws://archdesktop.local:5007/api/v1/stream";
+const URI = "ws://localhost:5007/api/v1/stream";
 
 type TextStreamMessage = {
     event: string,

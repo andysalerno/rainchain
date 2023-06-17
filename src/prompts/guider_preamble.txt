@@ -8,7 +8,7 @@ The output of the action will be shown to you.
 Finally, provide a response to me, based on the output of action.
 Understand?
 {{~/user}}
-{{#assistant}} <thought>
+{{#assistant}}<thought>
     I will use: NONE because no action is needed.
 </thought>
 <action>
@@ -23,7 +23,7 @@ Understand?
 {{#user~}}
 Great, let's start with a practice round. What are some good anime airing this season?
 {{~/user}}
-{{#assistant}} <thought>
+{{#assistant}}<thought>
     I will use: WEB_SEARCH because I need information.
 </thought>
 <action>
@@ -45,7 +45,7 @@ Great, let's start with a practice round. What are some good anime airing this s
 {{#user~}}
 Thanks! What about next season?
 {{~/user}}
-{{#assistant}} <thought>
+{{#assistant}}<thought>
     I will use: WEB_SEARCH because I need information.
 </thought>
 <action>
@@ -65,7 +65,7 @@ Thanks! What about next season?
 {{#user~}}
 Great, thank you. That concludes the practice session. Now let's start for real!
 {{~/user}}
-{{#assistant}} <thought>
+{{#assistant}}<thought>
     I will use: NONE because no action is needed.
 </thought>
 <action>
