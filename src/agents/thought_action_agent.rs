@@ -1,11 +1,10 @@
-use std::fs;
-
 use async_trait::async_trait;
 use futures_util::{Stream, StreamExt};
 use log::{debug, info};
 
 use crate::{
     conversation::Conversation,
+    load_prompt_text,
     model_client::{GuidanceRequestBuilder, GuidanceResponse, ModelClient},
     server::{MessageChannel, MessageToClient},
     tools::{web_search::WebSearch, Tool},
@@ -132,10 +131,4 @@ impl Agent for ThoughtActionAgent {
         // We will return nothing, since  we already sent the client everything ourselves. No need to make the session do it for us.
         Box::new(futures::stream::empty())
     }
-}
-
-fn load_prompt_text(prompt_name: &str) -> String {
-    let path = format!("src/prompts/{prompt_name}");
-    debug!("Reading prompt file: {path}");
-    fs::read_to_string(path).expect("Failed to read prompt file")
 }

@@ -1,0 +1,32 @@
+{{#user~}}
+Hello! I want you to take some text, and transform it into a question.
+If the text is already a question, just return it as-is.
+Make sense?
+{{~/user}}
+{{#assistant~}}
+Makes sense! I'm ready.
+{{~/assistant}}
+{{#user~}}
+Transform this into a question: 'protests in france'
+{{~/user}}
+{{#assistant~}}
+question: what are the protests in France?
+{{~/assistant}}
+{{#user~}}
+Transform this into a question: 'weather in Seattle this weekend'
+{{~/user}}
+{{#assistant~}}
+question: what is the weather in Seattle this weekend?
+{{~/assistant}}
+{{#user~}}
+Transform this into a question: 'best anime 2023'
+{{~/user}}
+{{#assistant~}}
+question: what's the best anime in 2023?
+{{~/assistant}}
+{{#user~}}
+Transform this into a question: '{{user_input}}'
+{{~/user}}
+{{#assistant~}}
+question: {{gen 'response' temperature=0.5}}
+{{~/assistant}}

@@ -2,11 +2,14 @@ use std::{error::Error, time::Duration, vec};
 
 use async_trait::async_trait;
 use futures::future;
-use log::{debug, trace, info};
+use log::{debug, info, trace};
 use ordered_float::OrderedFloat;
 use serde::Deserialize;
 
-use crate::model_client::{Embedding, EmbeddingsRequest, ModelClient};
+use crate::{
+    load_prompt_text,
+    model_client::{Embedding, EmbeddingsRequest, GuidanceRequestBuilder, ModelClient},
+};
 
 use super::Tool;
 
@@ -48,7 +51,23 @@ impl Tool for WebSearch {
             debug!("Got {len} embeddings.");
         }
 
-        let user_embed_str: String = input.into();
+        // Transform input into a question
+        let user_embed_str: String = {
+            debug!("Turning input '{input}' into a question");
+            let question_prompt = load_prompt_text("guider_generate_question.txt");
+            let request = GuidanceRequestBuilder::new(question_prompt)
+                .with_parameter("user_input", input)
+                .build();
+            let response = model_client.request_guidance(&request).await;
+
+            let response_str = response
+                .variable("response")
+                .expect("Expected guidance to populate the 'response' variable");
+
+            info!("Converted input '{}' to question '{}'", input, response_str);
+
+            response_str.into()
+        };
 
         let user_input_embedding = {
             let response = model_client
@@ -177,8 +196,10 @@ async fn scrape(url: impl AsRef<str>) -> Result<String, Box<dyn Error + Send + S
 }
 
 fn get_api_key_cx() -> (String, String) {
-    let api_key = std::fs::read_to_string("src/.googlekey.txt").expect("Expected to find google key file.");
-    let cx = std::fs::read_to_string("src/.googlecx.txt").expect("Expected to find google context file.");
+    let api_key =
+        std::fs::read_to_string("src/.googlekey.txt").expect("Expected to find google key file.");
+    let cx = std::fs::read_to_string("src/.googlecx.txt")
+        .expect("Expected to find google context file.");
 
     (api_key, cx)
 }

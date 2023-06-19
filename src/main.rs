@@ -1,7 +1,7 @@
 #![deny(clippy::pedantic)]
 #![allow(clippy::module_name_repetitions, clippy::too_many_lines)]
 
-use std::env;
+use std::{env, fs};
 
 use env_logger::Env;
 use guidance_client::GuidanceClient;
@@ -54,4 +54,10 @@ fn make_client(url: impl Into<String>) -> impl ModelClient + Sync + Send {
     let url = url.into();
     debug!("Creating client for url: {url}");
     GuidanceClient::new(url)
+}
+
+pub(crate) fn load_prompt_text(prompt_name: &str) -> String {
+    let path = format!("src/prompts/{prompt_name}");
+    debug!("Reading prompt file: {path}");
+    fs::read_to_string(path).expect("Failed to read prompt file")
 }
