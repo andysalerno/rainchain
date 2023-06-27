@@ -13,6 +13,7 @@
     *I will use the following results to inform my response to the user:*
 {{await 'output'}}
 </output>
-<response>{{gen 'response' temperature=0.5 stop='\n</response'}}
+<response>
+    {{gen 'response' temperature=0.5}}
 </response>
 {{~/assistant}}

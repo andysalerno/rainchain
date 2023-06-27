@@ -89,12 +89,15 @@ impl Tool for WebSearch {
         with_scores.sort_unstable_by_key(|(_, score)| -*score);
 
         let mut result = String::new();
-        for (n, (embedding, score)) in with_scores.into_iter().take(TOP_N_SECTIONS).enumerate() {
+        for (n, (embedding, score)) in with_scores.into_iter().take(TOP_N_SECTIONS + 3).enumerate()
+        {
             let index = embedding.index();
             let original_text = &sections[index];
             debug!("Score {score}: {original_text}");
 
-            result.push_str(&format!("    [WEB_RESULT {n}]: {original_text}\n"));
+            if n < TOP_N_SECTIONS {
+                result.push_str(&format!("    [WEB_RESULT {n}]: {original_text}\n"));
+            }
         }
 
         // Trailing newline

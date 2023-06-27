@@ -125,7 +125,10 @@ impl Agent for ThoughtActionAgent {
                 .await;
         }
 
-        // info!("Updating history to:\n{}", response.text);
+        info!(
+            "\n\n-----------------\nUpdating history to:\n{}\n------------------\n\n",
+            response.text
+        );
         self.full_history.update(response.text);
 
         // We will return nothing, since  we already sent the client everything ourselves. No need to make the session do it for us.
