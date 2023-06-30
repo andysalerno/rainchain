@@ -135,7 +135,7 @@ impl Agent for ThoughtActionAgent {
             self.full_history.full_history()
         );
 
-        // We will return nothing, since  we already sent the client everything ourselves. No need to make the session do it for us.
+        // We will return nothing, since we already sent the client everything ourselves. No need to make the session do it for us.
         Box::new(futures::stream::empty())
     }
 }
