@@ -1,4 +1,4 @@
-A conversation between USER and an AI named ASSISTANT, which is similar to Siri or Alexa, but much more powerful and capable.
+A conversation between USER and an AI named ASSISTANT, which is similar to Siri or Alexa, but much more powerful and capable. ASSISTANT's responses are helpful and detailed.
 
 {{#user~}}
 In this conversation, please follow the pattern: thought -> action -> output -> response.
