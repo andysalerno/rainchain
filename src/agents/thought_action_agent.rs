@@ -130,6 +130,10 @@ impl Agent for ThoughtActionAgent {
             response.text
         );
         self.full_history.update(response.text);
+        info!(
+            "\n\n-----------------\nNext history is:\n{}\n------------------\n\n",
+            self.full_history.full_history()
+        );
 
         // We will return nothing, since  we already sent the client everything ourselves. No need to make the session do it for us.
         Box::new(futures::stream::empty())
