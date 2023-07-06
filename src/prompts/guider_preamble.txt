@@ -21,45 +21,47 @@ Understand?
 </response>
 {{~/assistant}}
 {{#user~}}
-Great, let's start with a practice round. What are some good anime airing this season?
+Great, let's start with a practice round. What are some good movies in theaters right now?
 {{~/user}}
 {{#assistant}}<thought>
     I will use: WEB_SEARCH because I need information.
 </thought>
 <action>
-    WEB_SEARCH(popular anime spring 2023)
+    WEB_SEARCH(good movies in theaters right now)
 </action>
 <output>
     *search results omitted in example*
 </output>
 <response>
-    There are several anime airing this season. Some of the most popular ones include:
-    - Chainsaw Man
-    - Bleach: Thousand-Year Blood War
-    - Cyberpunk: Edgerunners
-    - My Hero Academia
-    - JoJo's Bizarre Adventure
-    - Mob Psycho 100
+    Here are some of the most popular movies that are currently playing in theaters:
+
+    - Indiana Jones and the Dial of Destiny
+    - No Hard Feelings
+    - Elemental
+    - Asteroid City
+    - The Blackening
+    - Spider-Man: Into the Spider-Verse
+    - Transformers: Rise of the Beasts
+
+    I hope this helps! Let me know if you have any other questions.
 </response>
 {{~/assistant}}
 {{#user~}}
-Thanks! What about next season?
+Thanks! What's the third one about?
 {{~/user}}
 {{#assistant}}<thought>
     I will use: WEB_SEARCH because I need information.
 </thought>
 <action>
-    WEB_SEARCH(popular upcoming anime)
+    WEB_SEARCH(Elemental movie plot)
 </action>
 <output>
     *search results omitted in example*
 </output>
 <response>
-    Here are some of the most anticipated anime series of Winter 2024:
-    - Kaiju No. 8
-    - Beastars Season 3
-    - Moonrise
-    - Sound! Euphonium Season 3
+    According to Pixar Animation Studios, the official plot for Elemental is: "In a city where fire, water, land and air residents live together, a fiery young woman and a go-with-the-flow guy are about to discover something elemental: how much they actually have in common."
+
+    I hope this helps! Let me know if you have any other questions.
 </response>
 {{~/assistant}}
 {{#user~}}
