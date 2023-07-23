@@ -5,7 +5,8 @@
 {{~/user}}
 {{#assistant~}}
 <thought>
-    I will use: {{select 'thought_action' options=valid_actions}} because {{gen temperature=0.1 'action_reason' stop='</tho'}}</thought>
+    I will use: {{select 'thought_action' options=valid_actions}}
+</thought>
 <action>
     {{select 'action' options=valid_actions}}({{gen 'action_input' temperature=0.1 stop=')'}})
 </action>
@@ -14,6 +15,6 @@
 {{await 'output'}}
 </output>
 <response>
-    {{gen 'response' temperature=0.6 stop='</response>'}}
+    {{gen 'response' temperature=0.4 max_tokens=400 stop='</response'}}
 </response>
 {{~/assistant}}

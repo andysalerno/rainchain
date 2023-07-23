@@ -13,7 +13,7 @@ use crate::{
 
 use super::Tool;
 
-const MAX_SECTION_LEN: usize = 800;
+const MAX_SECTION_LEN: usize = 1600;
 const TOP_N_SECTIONS: usize = 3;
 
 pub struct WebSearch;
@@ -39,7 +39,10 @@ impl Tool for WebSearch {
             .collect();
 
         debug!("Getting embeddings for {} text extracts...", sections.len());
-        let sections_as_query = sections.iter().map(|text| format!("passage: {text}")).collect();
+        let sections_as_query = sections
+            .iter()
+            .map(|text| format!("passage: {text}"))
+            .collect();
         let embeddings_result = model_client
             .request_embeddings(&EmbeddingsRequest::new(sections_as_query))
             .await;
