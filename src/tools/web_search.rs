@@ -13,7 +13,7 @@ use crate::{
 
 use super::Tool;
 
-const MAX_SECTION_LEN: usize = 1600;
+const MAX_SECTION_LEN: usize = 1000;
 const TOP_N_SECTIONS: usize = 3;
 
 pub struct WebSearch;
