@@ -1,9 +1,9 @@
 use async_trait::async_trait;
 use futures_util::{Stream, StreamExt};
-use log::{debug, info};
+use log::{debug, info, warn};
 
 use crate::{
-    conversation::Conversation,
+    conversation::{self, ChatMessage, Conversation},
     load_prompt_text,
     model_client::{GuidanceRequestBuilder, GuidanceResponse, ModelClient},
     server::{MessageChannel, MessageToClient},
@@ -14,14 +14,14 @@ use super::Agent;
 
 pub struct ThoughtActionAgent {
     model_client: Box<dyn ModelClient + Send + Sync>,
-    full_history: Conversation,
+    conversation: Conversation,
 }
 
 impl ThoughtActionAgent {
     pub fn new(model_client: Box<dyn ModelClient + Send + Sync>) -> Self {
         Self {
             model_client,
-            full_history: Conversation::new(),
+            conversation: Conversation::new(),
         }
     }
 }
@@ -37,19 +37,26 @@ impl Agent for ThoughtActionAgent {
         message: &str,
         ui_channel: &mut (dyn MessageChannel + Send + Sync),
     ) -> Box<dyn Stream<Item = Option<String>> + Unpin + Send> {
-        let prompt_preamble = load_prompt_text("guider_preamble.txt");
+        // let prompt_preamble = load_prompt_text("guider_preamble.txt");
+        warn!("Loading llama2chat preamable");
+        let prompt_preamble = load_prompt_text("guider_preamble_llama2chat.txt");
         let prompt_chat = load_prompt_text("guider_chat.txt");
 
-        self.full_history.add_user_message(message);
+        self.conversation
+            .add_message(ChatMessage::User(message.into()));
 
         // Hack: we need to manually replace {{history}} first, because that value
         // is itself templated, and guidance only performs template replacement once
         let prompt_chat: String = prompt_chat.replace("{{preamble}}", &prompt_preamble);
 
+        let history = build_history_from_conversation(&self.conversation);
+        let prompt_chat: String = prompt_chat.replace("{{history~}}", &history);
+
+        info!("Build prompt_chat:\n{prompt_chat}");
+
         // First, as the ThoughtActionAgent, we get the thought/action output:
         let request = GuidanceRequestBuilder::new(prompt_chat)
-            .with_parameter("history", self.full_history.full_history())
-            // .with_parameter("history", "")
+            // .with_parameter("history", history)
             .with_parameter("user_input", message)
             .with_parameter_list("valid_actions", &["WEB_SEARCH", "NONE"])
             .build();
@@ -126,16 +133,35 @@ impl Agent for ThoughtActionAgent {
         }
 
         info!(
-            "\n\n-----------------\nUpdating history to:\n{}\n------------------\n\n",
-            response.text
+            "\n\n-----------------\nReponse is\n{:?}\n------------------\n\n",
+            response.expect_variable("response")
         );
-        self.full_history.update(response.text);
-        info!(
-            "\n\n-----------------\nNext history is:\n{}\n------------------\n\n",
-            self.full_history.full_history()
-        );
+
+        self.conversation.add_message(ChatMessage::Assistant(
+            response.expect_variable("response").to_owned(),
+        ));
 
         // We will return nothing, since we already sent the client everything ourselves. No need to make the session do it for us.
         Box::new(futures::stream::empty())
     }
+}
+
+fn build_history_from_conversation(conversation: &Conversation) -> String {
+    let mut result = String::new();
+
+    for message in conversation.messages() {
+        let (role_start, role_end) = match message {
+            ChatMessage::User(_) => ("{{~#user~}}", "{{~/user}}"),
+            ChatMessage::Assistant(_) => ("{{~#assistant}}", "{{~/assistant}}"),
+            ChatMessage::System(_) => ("<<SYS>>", "<</SYS>>"),
+        };
+
+        let text = message.text();
+
+        result.push_str(&format!("{role_start}{text}{role_end}"));
+    }
+
+    info!("Build result:\n{result}");
+
+    result
 }
