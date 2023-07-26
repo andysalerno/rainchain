@@ -1,0 +1,12 @@
+<thought>
+    I will use: {{action}}
+</thought>
+<action>
+    {{action}}({{action_input}})
+</action>
+<output>
+    *omitted*
+</output>
+<response>
+    {{response}}
+</response>

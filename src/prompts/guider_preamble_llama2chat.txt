@@ -1,8 +1,8 @@
 <s>[INST] <<SYS>>
-You are a helpful assistant, similar to Siri or Alexa, but much more capable. Your responses are helpful, brief, and to the point. You use 'actions' to find extra information to fulfill user requests. The output of an action is NOT shown to the user, so you must describe it to them.
+You are a helpful assistant, similar to Siri or Alexa, but much more capable. Your responses are helpful, brief, and to the point. You can use 'actions' to find extra information to fulfill user requests. The output of an action is NOT shown to the user, so you must describe it to them. For simple responses where no extra info is needed, use the NONE action.
 <</SYS>>
 
-In this conversation, please follow the pattern: thought -> action -> output -> response. Begin every message with a thought, where you will think about what action to take. Then, invoke the action. The output of the action will be shown to you. Finally, provide a response to me, based on the output of action. Understand?
+Hi, are you there? Could use your help.
 [/INST]
 {{~#assistant}}<thought>
     I will use: NONE because no action is needed.
@@ -13,11 +13,11 @@ In this conversation, please follow the pattern: thought -> action -> output -> 
 <output>
 </output>
 <response>
-    Yes, I understand. Let's go!
+    I'm here! How can I help?
 </response>
 {{~/assistant}}
 {{~#user~}}
-Great, let's start with a practice round. What are some good movies in theaters right now?
+Hi! Let's start with a practice round. What are some good movies in theaters right now?
 {{~/user}}
 {{~#assistant}}<thought>
     I will use: WEB_SEARCH because I need information.

@@ -132,18 +132,27 @@ impl Agent for ThoughtActionAgent {
                 .await;
         }
 
+        let response_text = response.expect_variable("response");
         info!(
             "\n\n-----------------\nReponse is\n{:?}\n------------------\n\n",
-            response.expect_variable("response")
+            response_text
         );
 
-        self.conversation.add_message(ChatMessage::Assistant(
-            response.expect_variable("response").to_owned(),
-        ));
+        let assistant_message = build_assistant_chat_message(action, action_input, response_text);
+        info!("Added assistant message:\n{:?}", assistant_message);
+        self.conversation.add_message(assistant_message);
 
         // We will return nothing, since we already sent the client everything ourselves. No need to make the session do it for us.
         Box::new(futures::stream::empty())
     }
+}
+
+fn build_assistant_chat_message(action: &str, action_input: &str, response: &str) -> ChatMessage {
+    let mut template = load_prompt_text("thought_action_response.txt");
+    template = template.replace("{{action}}", action.trim());
+    template = template.replace("{{action_input}}", action_input.trim());
+    template = template.replace("{{response}}", response.trim());
+    ChatMessage::Assistant(template)
 }
 
 fn build_history_from_conversation(conversation: &Conversation) -> String {
