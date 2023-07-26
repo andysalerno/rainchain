@@ -61,7 +61,7 @@ Thanks! What's the third one about?
 </response>
 {{~/assistant}}
 {{~#user~}}
-Great, thank you. That concludes the practice session. Now let's start for real!
+Great, thank you. That concludes the practice session. Now let's start over, this time for real!
 {{~/user}}
 {{~#assistant}}<thought>
     I will use: NONE because no action is needed.
@@ -72,6 +72,6 @@ Great, thank you. That concludes the practice session. Now let's start for real!
 <output>
 </output>
 <response>
-    Of course! What can I help you with?
+    Of course! Let's start fresh, from the beginning.
 </response>
 {{~/assistant}}
