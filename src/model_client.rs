@@ -79,7 +79,7 @@ impl GuidanceResponse {
     pub fn expect_variable(&self, key: &str) -> &str {
         self.variables
             .get(key)
-            .expect("Expected to find the key, but did not.")
+            .unwrap_or_else(|| panic!("Expected to find the key '{key}', but did not."))
     }
 
     pub fn variable(&self, key: &str) -> Option<&str> {

@@ -1,11 +1,10 @@
 {{preamble}}
 {{history~}}
-{{#assistant~}}
-<thought>
-    I will use: {{select 'thought_action' options=valid_actions}}
+{{#assistant~}}<thought>
+    I will use: {{select 'thought_action' options=valid_actions logprobs='logprobs'}}
 </thought>
 <action>
-    {{select 'action' options=valid_actions}}({{gen 'action_input' temperature=0.1 stop=')'}})
+    {{select 'action' options=valid_actions logprobs='logprobs'}}({{gen 'action_input' temperature=0.1 stop=')'}})
 </action>
 <output>
     *These results are not shown to the user - I will use them to craft my response:*
