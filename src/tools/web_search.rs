@@ -20,42 +20,55 @@ pub struct WebSearch;
 
 #[async_trait]
 impl Tool for WebSearch {
+    fn name(&self) -> &str {
+        "WEB_SEARCH"
+    }
+
     async fn get_output(
         &self,
         input: &str,
         _user_message: &str,
         model_client: &(dyn ModelClient + Send + Sync),
     ) -> String {
-        let top_links = search(input).await;
+        // Search the web and find relevant text, split into sections:
+        let sections: Vec<String> = {
+            let top_links = search(input).await;
 
-        let scrape_futures = top_links.into_iter().take(6).map(scrape);
+            let scrape_futures = top_links.into_iter().take(6).map(scrape);
 
-        let sections: Vec<_> = future::join_all(scrape_futures)
-            .await
-            .into_iter()
-            .filter_map(Result::ok)
-            .filter(|text| text.len() > 50)
-            .flat_map(|text| split_text_into_sections(text, MAX_SECTION_LEN))
-            .collect();
+            future::join_all(scrape_futures)
+                .await
+                .into_iter()
+                .filter_map(Result::ok)
+                .filter(|text| text.len() > 50)
+                .flat_map(|text| split_text_into_sections(text, MAX_SECTION_LEN))
+                .collect()
+        };
 
-        debug!("Getting embeddings for {} text extracts...", sections.len());
-        let sections_as_query = sections
-            .iter()
-            .map(|text| format!("passage: {text}"))
-            .collect();
-        let embeddings_result = model_client
-            .request_embeddings(&EmbeddingsRequest::new(sections_as_query))
-            .await;
+        // Get embeddings for the sections:
+        let corpus_embeddings = {
+            debug!("Getting embeddings for {} text extracts...", sections.len());
+            let sections_as_query = sections
+                .iter()
+                .map(|text| format!("passage: {text}"))
+                .collect();
 
-        let mut corpus_embeddings = embeddings_result.take_embeddings();
-        corpus_embeddings.sort_unstable_by_key(Embedding::index);
+            let embeddings_result = model_client
+                .request_embeddings(&EmbeddingsRequest::new(sections_as_query))
+                .await;
 
-        {
-            let len = corpus_embeddings.len();
-            debug!("Got {len} embeddings.");
-        }
+            let mut corpus_embeddings = embeddings_result.take_embeddings();
+            corpus_embeddings.sort_unstable_by_key(Embedding::index);
 
-        // Transform input into a question
+            {
+                let len = corpus_embeddings.len();
+                debug!("Got {len} embeddings.");
+            }
+
+            corpus_embeddings
+        };
+
+        // Transform user input into a question:
         let user_embed_str: String = {
             debug!("Turning input '{input}' into a question");
             let question_prompt = load_prompt_text("guider_generate_question.txt");
@@ -74,6 +87,7 @@ impl Tool for WebSearch {
             format!("query: {response_str}")
         };
 
+        // Get embedding for user query:
         let user_input_embedding = {
             let response = model_client
                 .request_embeddings(&EmbeddingsRequest::new(vec![user_embed_str.clone()]))
@@ -82,37 +96,43 @@ impl Tool for WebSearch {
             embeddings.into_iter().next().expect("Expected embeddings")
         };
 
-        debug!("Finding closest matches for: {user_embed_str}");
-        let mut with_scores: Vec<_> = corpus_embeddings
-            .into_iter()
-            .map(|e| {
-                let similarity = cosine_similarity(user_input_embedding.embedding(), e.embedding());
-                (e, OrderedFloat(similarity))
-            })
-            .collect();
+        // Get scores for each embedding, and sort from best to worst:
+        let with_scores = {
+            debug!("Finding closest matches for: {user_embed_str}");
+            let mut with_scores: Vec<_> = corpus_embeddings
+                .into_iter()
+                .map(|e| {
+                    let similarity =
+                        cosine_similarity(user_input_embedding.embedding(), e.embedding());
+                    (e, OrderedFloat(similarity))
+                })
+                .collect();
 
-        with_scores.sort_unstable_by_key(|(_, score)| -*score);
+            with_scores.sort_unstable_by_key(|(_, score)| -*score);
 
-        let mut result = String::new();
-        for (n, (embedding, score)) in with_scores.into_iter().take(TOP_N_SECTIONS + 3).enumerate()
+            with_scores
+        };
+
+        // Build final result from top-scoring embeddings:
         {
-            let index = embedding.index();
-            let original_text = &sections[index];
-            debug!("Score {score}: {original_text}");
+            let mut result = String::new();
+            for (n, (embedding, score)) in
+                with_scores.into_iter().take(TOP_N_SECTIONS + 3).enumerate()
+            {
+                let index = embedding.index();
+                let original_text = &sections[index];
+                debug!("Score {score}: {original_text}");
 
-            if n < TOP_N_SECTIONS {
-                result.push_str(&format!("    [WEB_RESULT {n}]: {original_text}\n"));
+                if n < TOP_N_SECTIONS {
+                    result.push_str(&format!("    [WEB_RESULT {n}]: {original_text}\n"));
+                }
             }
+
+            // Trailing newline
+            result.pop();
+
+            result
         }
-
-        // Trailing newline
-        result.pop();
-
-        result
-    }
-
-    fn name(&self) -> &str {
-        "WEB_SEARCH"
     }
 }
 

@@ -56,7 +56,6 @@ impl Agent for ThoughtActionAgent {
 
         // First, as the ThoughtActionAgent, we get the thought/action output:
         let request = GuidanceRequestBuilder::new(prompt_chat)
-            // .with_parameter("history", history)
             .with_parameter("user_input", message)
             .with_parameter_list("valid_actions", &["WEB_SEARCH", "NONE"])
             .build();
@@ -64,6 +63,12 @@ impl Agent for ThoughtActionAgent {
         let output = self.model_client.request_guidance(&request).await;
 
         info!("Got thought/action output:\n{:#?}", output);
+
+        let memory_request = MemoryGetRequest {
+            query: "hello".to_owned(),
+        };
+
+        let memory_response = self.model_client.request_memory(&memory_request).await;
 
         // The first response will have thought, action, and action_input filled out.
         let action = output.expect_variable("action").trim();
@@ -137,12 +142,6 @@ impl Agent for ThoughtActionAgent {
             "\n\n-----------------\nReponse is\n{:?}\n------------------\n\n",
             response_text
         );
-
-        let memory_request = MemoryGetRequest {
-            query: "hello".to_owned(),
-        };
-
-        let memory_response = self.model_client.request_memory(&memory_request).await;
 
         let assistant_message = build_assistant_chat_message(action, action_input, response_text);
         info!("Added assistant message:\n{:?}", assistant_message);
