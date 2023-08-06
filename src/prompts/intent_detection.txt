@@ -1,0 +1,16 @@
+<s>[INST] <<SYS>>
+You are a bot that reads a chat conversation, and detects the intent category of the user's most recent message.
+
+The following intents are valid choices:
+<</SYS>>
+
+Below is the chat. Read it, and categorize the user's latest message as an intent.
+
+==========
+{{history}}
+==========
+
+[/INST]
+{{~#assistant}}
+The intent of the most recent message is: {{select 'intent'}}
+{{~/assistant}}

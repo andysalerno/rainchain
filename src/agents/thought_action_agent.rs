@@ -10,7 +10,10 @@ use crate::{
     tools::{web_search::WebSearch, Tool},
 };
 
-use super::Agent;
+use super::{
+    intent_detector::{Intent, IntentDetector},
+    Agent,
+};
 
 pub struct ThoughtActionAgent {
     model_client: Box<dyn ModelClient + Send + Sync>,
@@ -23,6 +26,14 @@ impl ThoughtActionAgent {
             model_client,
             conversation: Conversation::new(),
         }
+    }
+
+    fn intent_detector() -> IntentDetector {
+        let prompt = load_prompt_text("intent_detection.txt");
+        IntentDetector::new(
+            vec![Intent::new("information_retrieval", "The user intends to retrieve information from some knowledge store, such as the web.")],
+            prompt,
+        )
     }
 }
 
@@ -68,7 +79,14 @@ impl Agent for ThoughtActionAgent {
             query: "hello".to_owned(),
         };
 
-        let memory_response = self.model_client.request_memory(&memory_request).await;
+        // Testing memory and intent detection:
+        {
+            let memory_response = self.model_client.request_memory(&memory_request).await;
+            let intent_detector = Self::intent_detector();
+            let intent = intent_detector
+                .detect_intent(self.model_client.as_ref())
+                .await;
+        }
 
         // The first response will have thought, action, and action_input filled out.
         let action = output.expect_variable("action").trim();

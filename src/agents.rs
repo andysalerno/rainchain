@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use futures_util::Stream;
 
+mod intent_detector;
 mod thought_action_agent;
 
 pub use thought_action_agent::ThoughtActionAgent;
