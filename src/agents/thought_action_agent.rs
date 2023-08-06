@@ -1,11 +1,11 @@
 use async_trait::async_trait;
 use futures_util::{Stream, StreamExt};
-use log::{debug, info, warn};
+use log::{info, warn};
 
 use crate::{
-    conversation::{self, ChatMessage, Conversation},
+    conversation::{ChatMessage, Conversation},
     load_prompt_text,
-    model_client::{GuidanceRequestBuilder, GuidanceResponse, MemoryGetRequest, ModelClient},
+    model_client::{GuidanceRequestBuilder, GuidanceResponse, ModelClient},
     server::{MessageChannel, MessageToClient},
     tools::{web_search::WebSearch, Tool},
 };
@@ -31,7 +31,9 @@ impl ThoughtActionAgent {
     fn intent_detector() -> IntentDetector {
         let prompt = load_prompt_text("intent_detection.txt");
         IntentDetector::new(
-            vec![Intent::new("information_retrieval", "The user intends to retrieve information from some knowledge store, such as the web.")],
+            vec![
+                Intent::new("information_retrieval", "The user intends to retrieve information from some knowledge store, such as the web."),
+            ],
             prompt,
         )
     }
@@ -81,12 +83,12 @@ impl Agent for ThoughtActionAgent {
             //     query: "hello".to_owned(),
             // };
             // let memory_response = self.model_client.request_memory(&memory_request).await;
-            let intent_detector = Self::intent_detector();
-            let intent = intent_detector
-                .detect_intent(self.model_client.as_ref(), &self.conversation)
-                .await;
+            // let intent_detector = Self::intent_detector();
+            // let intent = intent_detector
+            //     .detect_intent(self.model_client.as_ref(), &self.conversation)
+            //     .await;
 
-            info!("Detected intent: {intent}");
+            // info!("Detected intent: {intent}");
         }
 
         // The first response will have thought, action, and action_input filled out.
