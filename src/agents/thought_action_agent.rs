@@ -5,7 +5,7 @@ use log::{debug, info, warn};
 use crate::{
     conversation::{self, ChatMessage, Conversation},
     load_prompt_text,
-    model_client::{GuidanceRequestBuilder, GuidanceResponse, ModelClient},
+    model_client::{GuidanceRequestBuilder, GuidanceResponse, MemoryRequest, ModelClient},
     server::{MessageChannel, MessageToClient},
     tools::{web_search::WebSearch, Tool},
 };
@@ -38,7 +38,7 @@ impl Agent for ThoughtActionAgent {
         ui_channel: &mut (dyn MessageChannel + Send + Sync),
     ) -> Box<dyn Stream<Item = Option<String>> + Unpin + Send> {
         // let prompt_preamble = load_prompt_text("guider_preamble.txt");
-        warn!("Loading llama2chat preamable");
+        warn!("Loading llama2chat preamble");
         let prompt_preamble = load_prompt_text("guider_preamble_llama2chat.txt");
         let prompt_chat = load_prompt_text("guider_chat.txt");
 
@@ -137,6 +137,12 @@ impl Agent for ThoughtActionAgent {
             "\n\n-----------------\nReponse is\n{:?}\n------------------\n\n",
             response_text
         );
+
+        let memory_request = MemoryRequest {
+            query: "hello".to_owned(),
+        };
+
+        let memory_response = self.model_client.request_memory(&memory_request).await;
 
         let assistant_message = build_assistant_chat_message(action, action_input, response_text);
         info!("Added assistant message:\n{:?}", assistant_message);

@@ -8,6 +8,7 @@ use serde_json::json;
 #[async_trait]
 pub trait ModelClient {
     async fn request_embeddings(&self, request: &EmbeddingsRequest) -> EmbeddingsResponse;
+    async fn request_memory(&self, request: &MemoryRequest) -> MemoryResponse;
     async fn request_guidance(&self, request: &GuidanceRequest) -> GuidanceResponse;
     fn request_guidance_stream(
         &self,
@@ -20,6 +21,19 @@ pub struct GuidanceEmbeddingsResponse {
     pub object: String,
     pub data: Vec<Embedding>,
     pub model: String,
+}
+
+#[derive(Default, Serialize, Deserialize, Debug)]
+pub struct MemoryResponse {
+    pub ids: Vec<String>,
+    pub distances: Vec<f32>,
+    pub metadatas: Vec<String>,
+    pub documents: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct MemoryRequest {
+    pub query: String,
 }
 
 pub struct GuidanceRequestBuilder {
