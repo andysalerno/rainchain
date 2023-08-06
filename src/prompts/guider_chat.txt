@@ -1,5 +1,5 @@
 {{preamble}}
-{{>history}}
+{{history~}}
 {{#assistant~}}<thought>
     I will use: {{select 'thought_action' options=valid_actions logprobs='logprobs'}}
 </thought>

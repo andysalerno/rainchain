@@ -54,6 +54,15 @@ impl GuidanceRequestBuilder {
         }
     }
 
+    pub fn with_object_parameter(mut self, key: impl Into<String>, value: impl Serialize) -> Self {
+        let key = key.into();
+        let value = json!(value);
+
+        self.parameters.insert(key, value);
+
+        self
+    }
+
     pub fn with_parameter(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
         let key = key.into();
         let value = value.into();

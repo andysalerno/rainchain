@@ -60,7 +60,7 @@ impl Agent for ThoughtActionAgent {
         // is itself templated, and guidance only performs template replacement once
         let prompt_chat: String = prompt_chat.replace("{{preamble}}", &prompt_preamble);
 
-        let history = build_history_from_conversation(&self.conversation);
+        let history = self.conversation.build_history();
         let prompt_chat: String = prompt_chat.replace("{{history~}}", &history);
 
         info!("Build prompt_chat:\n{prompt_chat}");
@@ -75,17 +75,18 @@ impl Agent for ThoughtActionAgent {
 
         info!("Got thought/action output:\n{:#?}", output);
 
-        let memory_request = MemoryGetRequest {
-            query: "hello".to_owned(),
-        };
-
         // Testing memory and intent detection:
         {
-            let memory_response = self.model_client.request_memory(&memory_request).await;
+            // let memory_request = MemoryGetRequest {
+            //     query: "hello".to_owned(),
+            // };
+            // let memory_response = self.model_client.request_memory(&memory_request).await;
             let intent_detector = Self::intent_detector();
             let intent = intent_detector
-                .detect_intent(self.model_client.as_ref())
+                .detect_intent(self.model_client.as_ref(), &self.conversation)
                 .await;
+
+            info!("Detected intent: {intent}");
         }
 
         // The first response will have thought, action, and action_input filled out.
@@ -176,24 +177,4 @@ fn build_assistant_chat_message(action: &str, action_input: &str, response: &str
     template = template.replace("{{action_input}}", action_input.trim());
     template = template.replace("{{response}}", response.trim());
     ChatMessage::Assistant(template)
-}
-
-fn build_history_from_conversation(conversation: &Conversation) -> String {
-    let mut result = String::new();
-
-    for message in conversation.messages() {
-        let (role_start, role_end) = match message {
-            ChatMessage::User(_) => ("{{~#user~}}", "{{~/user}}"),
-            ChatMessage::Assistant(_) => ("{{~#assistant}}", "{{~/assistant}}"),
-            ChatMessage::System(_) => ("<<SYS>>", "<</SYS>>"),
-        };
-
-        let text = message.text();
-
-        result.push_str(&format!("{role_start}{text}{role_end}"));
-    }
-
-    info!("Build result:\n{result}");
-
-    result
 }

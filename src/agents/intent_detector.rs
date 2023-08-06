@@ -1,5 +1,11 @@
-use crate::model_client::{GuidanceRequestBuilder, ModelClient};
+use serde::{Deserialize, Serialize};
 
+use crate::{
+    conversation::Conversation,
+    model_client::{GuidanceRequestBuilder, ModelClient},
+};
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub(crate) struct Intent {
     name: String,
     description: String,
@@ -35,13 +41,26 @@ impl IntentDetector {
         }
     }
 
-    pub async fn detect_intent(&self, model_client: &(dyn ModelClient + Send + Sync)) -> String {
-        let request = GuidanceRequestBuilder::new(&self.prompt)
-            .with_parameter("user_input", "blah")
-            .with_parameter_list("valid_actions", &["WEB_SEARCH", "NONE"])
+    pub async fn detect_intent(
+        &self,
+        model_client: &(dyn ModelClient + Send + Sync),
+        conversation: &Conversation,
+    ) -> String {
+        let history = conversation.build_history();
+
+        let prompt = self.prompt.replace("{{history}}", &history);
+
+        let intent_objects: Vec<Intent> = self.valid_intents.clone();
+
+        let intent_names: Vec<&str> = self.valid_intents.iter().map(Intent::name).collect();
+
+        let request = GuidanceRequestBuilder::new(prompt)
+            .with_object_parameter("intents", &intent_objects)
+            .with_parameter_list("intent_names", &intent_names)
             .build();
 
-        model_client.request_guidance(&request).await;
-        "intent".into()
+        let guidance_result = model_client.request_guidance(&request).await;
+        let selected_intent = guidance_result.expect_variable("intent");
+        selected_intent.into()
     }
 }
