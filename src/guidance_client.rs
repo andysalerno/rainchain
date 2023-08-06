@@ -93,7 +93,11 @@ impl GuidanceClient {
 
         info!("Get memory response:\n{text}");
 
-        MemoryResponse::default()
+        let parsed: MemoryResponse = serde_json::from_str(&text).unwrap();
+
+        info!("Memory response: {parsed:?}");
+
+        parsed
     }
 
     pub async fn get_embeddings(&self, request: &GuidanceEmbeddingsRequest) -> EmbeddingsResponse {
