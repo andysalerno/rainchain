@@ -5,7 +5,7 @@ use log::{debug, info, warn};
 use crate::{
     conversation::{self, ChatMessage, Conversation},
     load_prompt_text,
-    model_client::{GuidanceRequestBuilder, GuidanceResponse, MemoryRequest, ModelClient},
+    model_client::{GuidanceRequestBuilder, GuidanceResponse, MemoryGetRequest, ModelClient},
     server::{MessageChannel, MessageToClient},
     tools::{web_search::WebSearch, Tool},
 };
@@ -138,7 +138,7 @@ impl Agent for ThoughtActionAgent {
             response_text
         );
 
-        let memory_request = MemoryRequest {
+        let memory_request = MemoryGetRequest {
             query: "hello".to_owned(),
         };
 

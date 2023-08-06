@@ -10,7 +10,7 @@ use std::{collections::HashMap, future, pin::Pin, time::Duration};
 
 use crate::model_client::{
     EmbeddingsResponse, GuidanceEmbeddingsRequest, GuidanceEmbeddingsRequestBuilder,
-    GuidanceRequest, GuidanceResponse, MemoryRequest, MemoryResponse, ModelClient,
+    GuidanceRequest, GuidanceResponse, MemoryGetRequest, MemoryGetResponse, ModelClient,
 };
 
 pub struct GuidanceClient {
@@ -68,7 +68,7 @@ impl GuidanceClient {
         final_response
     }
 
-    async fn get_memory_response(&self, request: &MemoryRequest) -> MemoryResponse {
+    async fn get_memory_response(&self, request: &MemoryGetRequest) -> MemoryGetResponse {
         let client = reqwest::Client::new();
 
         let params = {
@@ -93,7 +93,7 @@ impl GuidanceClient {
 
         info!("Get memory response:\n{text}");
 
-        let parsed: MemoryResponse = serde_json::from_str(&text).unwrap();
+        let parsed: MemoryGetResponse = serde_json::from_str(&text).unwrap();
 
         info!("Memory response: {parsed:?}");
 
@@ -147,7 +147,7 @@ impl ModelClient for GuidanceClient {
         self.get_response(request).await
     }
 
-    async fn request_memory(&self, request: &MemoryRequest) -> MemoryResponse {
+    async fn request_memory(&self, request: &MemoryGetRequest) -> MemoryGetResponse {
         self.get_memory_response(request).await
     }
 
