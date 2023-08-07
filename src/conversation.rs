@@ -17,6 +17,14 @@ impl ChatMessage {
         }
     }
 
+    pub fn role(&self) -> &str {
+        match self {
+            ChatMessage::User(_) => "USER",
+            ChatMessage::Assistant(_) => "ASSISTANT",
+            ChatMessage::System(_) => "SYSTEM",
+        }
+    }
+
     /// Returns `true` if the chat message is [`User`].
     ///
     /// [`User`]: ChatMessage::User
@@ -71,6 +79,21 @@ impl Conversation {
 
             result.push_str(&format!("{role_start}{text}{role_end}"));
         }
+
+        result
+    }
+
+    pub fn messages_to_string<'a>(messages: impl IntoIterator<Item = &'a ChatMessage>) -> String {
+        let mut result = String::new();
+
+        for message in messages {
+            let role = message.role();
+            let text = message.text().trim();
+            result.push_str(&format!("{role}: {text}\n"));
+        }
+
+        // pop trailing newline
+        result.pop();
 
         result
     }

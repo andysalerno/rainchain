@@ -79,6 +79,8 @@ impl GuidanceClient {
             .expect("Failed to parse guidance memory request to json");
 
         info!("Sending guidance memory request to {url}...");
+        info!("{body}");
+
         client
             .post(url)
             .body(body)

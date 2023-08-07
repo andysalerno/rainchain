@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use async_trait::async_trait;
 use futures_util::{Stream, StreamExt};
 use log::{info, warn};
@@ -170,9 +172,18 @@ impl Agent for ThoughtActionAgent {
         info!("Added assistant message:\n{:?}", assistant_message);
         self.conversation.add_message(assistant_message);
 
-        // Store user and assistant output
+        // Store user and assistant output for just this turn as a document
         {
-            let memory_request = MemoryStoreRequest::new();
+            let last_two_range = self.conversation.messages().len() - 2..;
+            let last_two_messages = &self.conversation.messages()[last_two_range];
+
+            let messages_stringified = Conversation::messages_to_string(last_two_messages);
+
+            let mut memory_request = MemoryStoreRequest::new();
+
+            // Empty ID value is ok, server will generate a guid for it:
+            memory_request.add_document("", messages_stringified, HashMap::new());
+
             self.model_client.store_memory(&memory_request).await;
         }
 
