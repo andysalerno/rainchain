@@ -10,7 +10,8 @@ use std::{collections::HashMap, future, pin::Pin, time::Duration};
 
 use crate::model_client::{
     EmbeddingsResponse, GuidanceEmbeddingsRequest, GuidanceEmbeddingsRequestBuilder,
-    GuidanceRequest, GuidanceResponse, MemoryGetRequest, MemoryGetResponse, ModelClient,
+    GuidanceRequest, GuidanceResponse, MemoryGetRequest, MemoryGetResponse, MemoryStoreRequest,
+    ModelClient,
 };
 
 pub struct GuidanceClient {
@@ -66,6 +67,29 @@ impl GuidanceClient {
         info!("done. final:\n{:#?}", final_response);
 
         final_response
+    }
+
+    async fn store_memory(&self, request: &MemoryStoreRequest) {
+        let client = reqwest::Client::new();
+
+        let url = Url::parse(&format!("{}/memory", self.uri))
+            .expect("Failed to parse guidance memory url");
+
+        let body = serde_json::to_string(request)
+            .expect("Failed to parse guidance memory request to json");
+
+        info!("Sending guidance memory request to {url}...");
+        client
+            .post(url)
+            .body(body)
+            .timeout(Duration::from_secs(120))
+            .send()
+            .await
+            .expect("Failed to send guidance memory request")
+            .text()
+            .await
+            .expect("Expected text response");
+        info!("...Got response.");
     }
 
     async fn get_memory_response(&self, request: &MemoryGetRequest) -> MemoryGetResponse {
@@ -149,6 +173,10 @@ impl ModelClient for GuidanceClient {
 
     async fn request_memory(&self, request: &MemoryGetRequest) -> MemoryGetResponse {
         self.get_memory_response(request).await
+    }
+
+    async fn store_memory(&self, request: &MemoryStoreRequest) {
+        self.store_memory(request).await;
     }
 
     fn request_guidance_stream(

@@ -170,6 +170,8 @@ fn cosine_similarity(vec1: &[f32], vec2: &[f32]) -> f32 {
 }
 
 async fn search(query: &str) -> Vec<String> {
+    let query = query.replace('"', "");
+
     debug!("Searching Google for '{query}'");
 
     let (api_key, cx) = get_api_key_cx();
@@ -177,7 +179,11 @@ async fn search(query: &str) -> Vec<String> {
 
     let response = client
         .get("https://www.googleapis.com/customsearch/v1")
-        .query(&[("key", api_key.as_str()), ("cx", cx.as_str()), ("q", query)])
+        .query(&[
+            ("key", api_key.as_str()),
+            ("cx", cx.as_str()),
+            ("q", &query),
+        ])
         .timeout(Duration::from_millis(5000))
         .send()
         .await

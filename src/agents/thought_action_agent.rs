@@ -5,7 +5,9 @@ use log::{info, warn};
 use crate::{
     conversation::{ChatMessage, Conversation},
     load_prompt_text,
-    model_client::{GuidanceRequestBuilder, GuidanceResponse, ModelClient},
+    model_client::{
+        GuidanceRequestBuilder, GuidanceResponse, MemoryGetRequest, MemoryStoreRequest, ModelClient,
+    },
     server::{MessageChannel, MessageToClient},
     tools::{web_search::WebSearch, Tool},
 };
@@ -167,6 +169,12 @@ impl Agent for ThoughtActionAgent {
         let assistant_message = build_assistant_chat_message(action, action_input, response_text);
         info!("Added assistant message:\n{:?}", assistant_message);
         self.conversation.add_message(assistant_message);
+
+        // Store user and assistant output
+        {
+            let memory_request = MemoryStoreRequest::new();
+            self.model_client.store_memory(&memory_request).await;
+        }
 
         // We will return nothing, since we already sent the client everything ourselves. No need to make the session do it for us.
         Box::new(futures::stream::empty())

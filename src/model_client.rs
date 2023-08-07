@@ -9,6 +9,7 @@ use serde_json::json;
 pub trait ModelClient {
     async fn request_embeddings(&self, request: &EmbeddingsRequest) -> EmbeddingsResponse;
     async fn request_memory(&self, request: &MemoryGetRequest) -> MemoryGetResponse;
+    async fn store_memory(&self, request: &MemoryStoreRequest);
     async fn request_guidance(&self, request: &GuidanceRequest) -> GuidanceResponse;
     fn request_guidance_stream(
         &self,
@@ -36,9 +37,28 @@ pub struct MemoryGetRequest {
     pub query: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct MemoryStoreRequest {
-    pub query: String,
+    ids: Vec<String>,
+    documents: Vec<String>,
+    metadatas: Vec<HashMap<String, String>>,
+}
+
+impl MemoryStoreRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn add_document(
+        &mut self,
+        id: impl Into<String>,
+        document: impl Into<String>,
+        metadatas: HashMap<String, String>,
+    ) {
+        self.ids.push(id.into());
+        self.documents.push(document.into());
+        self.metadatas.push(metadatas);
+    }
 }
 
 pub struct GuidanceRequestBuilder {
