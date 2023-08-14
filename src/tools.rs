@@ -2,6 +2,7 @@ use async_trait::async_trait;
 
 use crate::model_client::ModelClient;
 
+pub mod home_automation;
 pub mod noop;
 pub mod web_search;
 

@@ -207,7 +207,8 @@ async fn scrape(url: impl AsRef<str>) -> Result<String, Box<dyn Error + Send + S
         .timeout(Duration::from_millis(2000))
         .build()?;
 
-    let response = client.get(url).send().await?;
+    let response = client.get(url)
+        .header("User-Agent", "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Googlebot/2.1; +http://www.google.com/bot.html) Chrome/W.X.Y.Z Safari/537.36").send().await?;
     let s = response.text().await?;
 
     info!("Read text from {} length: {}", url, s.len());
